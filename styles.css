@@ -1,11 +1,13 @@
 :root{
-  --navy:#0E3049;
+  /*--navy:#0E3049;*/
+  --navy:#1B365D;
   --cream:#F9F0DA;
   --cream-2:#EADFC2;
   --olive:#566B25;
   --olive-dark:#41531B;
-  --terra:#E4552C;
-  --terra-dark:#C8451F;
+  /*--terra:#E4552C;*/
+  -terra-dark:#C8451F;
+  --terra:#B67233;
   --peach:#F1975C;
   --sand:#EFE0BE;
   --muted-on-navy:#D8CDB2;
