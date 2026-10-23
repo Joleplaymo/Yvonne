@@ -4,14 +4,16 @@ import Icon from '../components/Icon.astro';
 import Steps from '../components/Steps.astro';
 import { Image } from 'astro:assets';
 import cover from '../assets/couverture.png';
-import { pricing } from '../lib/server';
-import { formatEur } from '../lib/pricing';
 ---
 <Base title="Panier — Les hormones d'Yvonne" noindex>
-  <script type="application/json" id="pricing" set:html={JSON.stringify(pricing)} />
   <section class="section">
     <Steps current={1} />
     <h1 style="font-size:44px;">Votre panier</h1>
+
+    <div class="notice error" data-load-error hidden style="margin-top:24px;">
+      La boutique est momentanément indisponible. Réessayez dans un instant ou écrivez à
+      <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a>.
+    </div>
 
     <div class="empty notice" data-empty hidden>
       Votre panier est vide.
@@ -24,13 +26,13 @@ import { formatEur } from '../lib/pricing';
         <div class="info">
           <h2>Les hormones d'Yvonne</h2>
           <p>Vanessa Gandino — livre broché</p>
-          <p class="unit">{formatEur(pricing.unitCents)} l'exemplaire</p>
+          <p class="unit"><span data-unit></span> l'exemplaire</p>
           <div class="qty" role="group" aria-label="Quantité">
             <button type="button" data-dec aria-label="Retirer un exemplaire"><Icon name="minus" size={20} /></button>
             <output data-qty aria-live="polite">1</output>
             <button type="button" data-inc aria-label="Ajouter un exemplaire"><Icon name="plus" size={20} /></button>
           </div>
-          <p class="max">Maximum {pricing.maxQty} exemplaires par commande.</p>
+          <p class="max">Maximum <span data-max></span> exemplaires par commande.</p>
           <button type="button" class="remove" data-remove>Retirer du panier</button>
         </div>
       </div>
@@ -52,38 +54,44 @@ import { formatEur } from '../lib/pricing';
 
 <script>
   import { readCart, writeCart } from '../scripts/cart';
-  import { computeTotals, formatEur, type PricingConfig } from '../lib/pricing';
+  import { loadShopConfig } from '../scripts/shop-config';
+  import { computeTotals, formatEur } from '../lib/pricing';
 
-  const cfg: PricingConfig = JSON.parse(document.getElementById('pricing')!.textContent!);
   const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 
   const params = new URLSearchParams(location.search);
   if (params.has('ajouter')) {
-    const { qty } = readCart();
-    writeCart({ qty: Math.max(qty, 1) });
+    writeCart({ qty: Math.max(readCart().qty, 1) });
     history.replaceState(null, '', '/panier');
   }
 
-  function render() {
-    const qty = Math.min(readCart().qty, cfg.maxQty);
-    $('[data-empty]').hidden = qty > 0;
-    $('[data-filled]').hidden = qty < 1;
-    if (qty < 1) return;
-    const t = computeTotals(qty, cfg);
-    $('[data-qty]').textContent = String(qty);
-    $('[data-subtotal]').textContent = formatEur(t.subtotalCents);
-    $('[data-shipping]').textContent = formatEur(t.shippingCents);
-    $('[data-total]').textContent = formatEur(t.totalCents);
-    $<HTMLButtonElement>('[data-dec]').disabled = qty <= 1;
-    $<HTMLButtonElement>('[data-inc]').disabled = qty >= cfg.maxQty;
-  }
+  loadShopConfig().then((cfg) => {
+    $('[data-unit]').textContent = formatEur(cfg.unitCents);
+    $('[data-max]').textContent = String(cfg.maxQty);
 
-  $('[data-inc]').addEventListener('click', () => writeCart({ qty: Math.min(readCart().qty + 1, cfg.maxQty) }));
-  $('[data-dec]').addEventListener('click', () => writeCart({ qty: Math.max(readCart().qty - 1, 1) }));
-  $('[data-remove]').addEventListener('click', () => writeCart({ qty: 0 }));
-  window.addEventListener('cart:change', render);
-  window.addEventListener('storage', render);
-  render();
+    const render = () => {
+      const qty = Math.min(readCart().qty, cfg.maxQty);
+      $('[data-empty]').hidden = qty > 0;
+      $('[data-filled]').hidden = qty < 1;
+      if (qty < 1) return;
+      const t = computeTotals(qty, cfg);
+      $('[data-qty]').textContent = String(qty);
+      $('[data-subtotal]').textContent = formatEur(t.subtotalCents);
+      $('[data-shipping]').textContent = formatEur(t.shippingCents);
+      $('[data-total]').textContent = formatEur(t.totalCents);
+      $<HTMLButtonElement>('[data-dec]').disabled = qty <= 1;
+      $<HTMLButtonElement>('[data-inc]').disabled = qty >= cfg.maxQty;
+    };
+
+    $('[data-inc]').addEventListener('click', () => writeCart({ qty: Math.min(readCart().qty + 1, cfg.maxQty) }));
+    $('[data-dec]').addEventListener('click', () => writeCart({ qty: Math.max(readCart().qty - 1, 1) }));
+    $('[data-remove]').addEventListener('click', () => writeCart({ qty: 0 }));
+    window.addEventListener('cart:change', render);
+    window.addEventListener('storage', render);
+    render();
+  }).catch(() => {
+    $('[data-load-error]').hidden = false;
+  });
 </script>
 
 <style>

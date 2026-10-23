@@ -1,24 +1,21 @@
-# --- Build -------------------------------------------------------------
+# --- Pages statiques (Astro) ------------------------------------------
 FROM node:24-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-ARG SITE_DOMAINS=localhost
-ENV SITE_DOMAINS=${SITE_DOMAINS}
-RUN npm test && npm run build && npm prune --omit=dev
+RUN npm test && npm run build && node scripts/assemble.mjs
 
-# --- Runtime -----------------------------------------------------------
-FROM node:24-slim
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=4321 DATA_DIR=/data
-WORKDIR /app
-COPY --from=build /app/package.json ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-RUN mkdir -p /data && chown node:node /data
-USER node
+# --- Serveur PHP + Apache (même code que sur Hostinger) ---------------
+FROM php:8.3-apache
+RUN a2enmod rewrite headers expires \
+ && sed -ri 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf \
+ && printf 'ServerName localhost\nServerTokens Prod\nServerSignature Off\n' > /etc/apache2/conf-enabled/zz-security.conf \
+ && printf 'expose_php=Off\ndisplay_errors=Off\nlog_errors=On\n' > /usr/local/etc/php/conf.d/zz-prod.ini \
+ && mkdir -p /data && chown www-data:www-data /data
+ENV DATA_DIR=/data TRUST_PROXY=1 LOG_FILE=stderr
+COPY --from=build /app/build/public_html/ /var/www/html/
 VOLUME /data
-EXPOSE 4321
+EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD node -e "fetch('http://127.0.0.1:4321/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["node", "./dist/server/entry.mjs"]
+  CMD php -r 'exit(@file_get_contents("http://127.0.0.1/api/config") ? 0 : 1);'

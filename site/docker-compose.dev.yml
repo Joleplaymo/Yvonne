@@ -1,0 +1,41 @@
+# Environnement de développement : le site assemblé (npm run build && npm run assemble)
+# servi par PHP 8.3 + Apache sur http://localhost:8080, e-mails capturés par Mailpit (http://localhost:8025).
+# `npm run dev` (Astro, :4321) relaie /api, /merci et /admin vers ce conteneur.
+name: vanessagandino-dev
+
+services:
+  php:
+    image: php:8.3-apache
+    command: >
+      sh -c "a2enmod rewrite headers expires >/dev/null
+      && sed -ri 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+      && mkdir -p /data && chown www-data:www-data /data
+      && apache2-foreground"
+    ports:
+      - "8080:80"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATA_DIR: /data
+      LOG_FILE: stderr
+      MAIL_MODE: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_USER: test@localhost
+      SMTP_PASSWORD: test
+      PUBLIC_BASE_URL: http://localhost:8080
+    volumes:
+      - ./build/public_html:/var/www/html:ro
+      - devdata:/data
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      - "8025:8025"
+
+volumes:
+  devdata:

@@ -6,3 +6,4 @@ data/
 .vitest/
 backups/
 deploy/
+build/

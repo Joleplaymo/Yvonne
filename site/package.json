@@ -12,17 +12,18 @@
     "start": "node ./dist/server/entry.mjs",
     "test": "vitest run",
     "check": "astro check",
-    "package:hostinger": "node scripts/package-hostinger.mjs"
+    "package:hostinger": "astro build && node scripts/assemble.mjs --zip",
+    "test:php": "node scripts/test-php.mjs",
+    "assemble": "node scripts/assemble.mjs",
+    "php": "docker compose -f docker-compose.dev.yml up"
   },
   "dependencies": {
-    "@astrojs/node": "11.1.9",
     "astro": "7.4.2",
-    "lucide-static": "1.61.0",
-    "nodemailer": "10.2.1"
+    "lucide-static": "1.61.0"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
-    "@types/nodemailer": "8.0.2",
+    "@types/node": "24.19.2",
     "typescript": "6.0.3",
     "vitest": "5.0.5"
   }

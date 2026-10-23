@@ -8,3 +8,6 @@ Dockerfile
 docker-compose.yml
 Caddyfile
 README.md
+build
+deploy
+backups

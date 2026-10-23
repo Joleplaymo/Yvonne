@@ -1,0 +1,35 @@
+---
+// Gabarit des pages PHP d'administration. PHP remplace %%TITLE%% et <!--%%CONTENT%%-->.
+import Admin from '../layouts/Admin.astro';
+---
+<Admin title="%%TITLE%%">
+  <Fragment set:html="<!--%%CONTENT%%-->" />
+</Admin>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-from]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      const src = document.querySelector(b.dataset.copyFrom!);
+      await navigator.clipboard.writeText(src?.textContent ?? '');
+      b.textContent = 'Copié ✓';
+    }),
+  );
+  document.querySelectorAll<HTMLFormElement>('form[data-confirm]').forEach((f) =>
+    f.addEventListener('submit', (e) => {
+      if (!confirm(f.dataset.confirm!)) e.preventDefault();
+    }),
+  );
+</script>
+
+<style is:global>
+  .detail { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 20px 0 32px; }
+  .detail h2, .actions h2 { font-size: 22px; margin-bottom: 10px; }
+  .admin pre { background: #fff; border-radius: 10px; padding: 14px; font-size: 14.5px; white-space: pre-wrap; margin: 0 0 14px; }
+  .actions { display: flex; flex-direction: column; gap: 18px; }
+  .act { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding: 18px; border: 2px solid var(--cream-2); border-radius: 14px; }
+  .act > label { font-size: 14.5px; display: flex; gap: 6px; align-items: center; }
+  .act .field { min-width: 240px; }
+  .act.note { flex-direction: column; align-items: stretch; }
+  .login { max-width: 380px; margin: 40px auto; display: flex; flex-direction: column; gap: 16px; }
+  @media (max-width: 760px) { .detail { grid-template-columns: 1fr; } }
+</style>

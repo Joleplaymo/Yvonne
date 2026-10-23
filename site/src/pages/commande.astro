@@ -2,17 +2,8 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Steps from '../components/Steps.astro';
-import { pricing, mrBrand } from '../lib/server';
-
-const clientCfg = { ...pricing, mrBrand };
 ---
 <Base title="Livraison & coordonnées — Les hormones d'Yvonne" noindex>
-  <Fragment slot="head">
-    {mrBrand && <script is:inline src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>}
-    {mrBrand && <script is:inline src="https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.min.js"></script>}
-  </Fragment>
-  <script type="application/json" id="cfg" set:html={JSON.stringify(clientCfg)} />
-
   <section class="section">
     <Steps current={2} />
     <a href="/panier" class="back"><Icon name="arrow-left" size={18} /> Modifier le panier</a>
@@ -20,6 +11,10 @@ const clientCfg = { ...pricing, mrBrand };
 
     <div class="notice" data-empty hidden style="margin-top:24px;">
       Votre panier est vide. <a href="/panier?ajouter=1">Ajouter le livre</a>
+    </div>
+    <div class="notice error" data-load-error hidden style="margin-top:24px;">
+      La boutique est momentanément indisponible. Réessayez dans un instant ou écrivez à
+      <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a>.
     </div>
 
     <form class="checkout" data-form novalidate hidden>
@@ -37,21 +32,18 @@ const clientCfg = { ...pricing, mrBrand };
 
         <fieldset>
           <legend>Point relais Mondial Relay</legend>
-          {mrBrand ? (
-            <div>
-              <p class="hint" style="margin:0 0 12px;">Saisissez votre code postal, puis <strong>cliquez sur le repère</strong> du point relais choisi sur la carte. Les relais grisés sont fermés.</p>
-              <div id="mr-widget" class="mr-widget"></div>
-              <input type="hidden" id="mr-target" />
-              <p class="relay-picked" data-relay-picked hidden></p>
-            </div>
-          ) : (
-            <p class="hint">
-              <Icon name="map-pin" size={18} />
-              <a href="https://www.mondialrelay.fr/trouver-le-point-relais-le-plus-proche-de-chez-moi/" target="_blank" rel="noopener">Trouver mon point relais le plus proche</a>
-              (s'ouvre dans un nouvel onglet), puis recopiez ses informations ci-dessous.
-            </p>
-          )}
-          <div class="form-grid relay-fields" data-relay-fields hidden={!!mrBrand}>
+          <div data-mr-block hidden>
+            <p class="hint" style="margin:0 0 12px;">Saisissez votre code postal, puis <strong>cliquez sur le repère</strong> du point relais choisi sur la carte. Les relais grisés sont fermés.</p>
+            <div id="mr-widget" class="mr-widget"></div>
+            <input type="hidden" id="mr-target" />
+            <p class="relay-picked" data-relay-picked hidden></p>
+          </div>
+          <p class="hint" data-manual-hint>
+            <Icon name="map-pin" size={18} />
+            <a href="https://www.mondialrelay.fr/trouver-le-point-relais-le-plus-proche-de-chez-moi/" target="_blank" rel="noopener">Trouver mon point relais le plus proche</a>
+            (s'ouvre dans un nouvel onglet), puis recopiez ses informations ci-dessous.
+          </p>
+          <div class="form-grid relay-fields" data-relay-fields>
             <div class="field"><label for="relayName">Nom du point relais</label><input id="relayName" name="relayName" required maxlength="120" placeholder="Ex. Tabac Presse du Centre" /><span class="err" data-err="relayName"></span></div>
             <div class="field"><label for="relayId">N° du point relais <small>(facultatif)</small></label><input id="relayId" name="relayId" maxlength="20" placeholder="Ex. 012345" /><span class="err" data-err="relayId"></span></div>
             <div class="field full"><label for="relayAddress">Adresse</label><input id="relayAddress" name="relayAddress" required maxlength="200" /><span class="err" data-err="relayAddress"></span></div>
@@ -95,28 +87,64 @@ const clientCfg = { ...pricing, mrBrand };
 
 <script>
   import { readCart, writeCart } from '../scripts/cart';
-  import { computeTotals, formatEur, type PricingConfig } from '../lib/pricing';
+  import { computeTotals, formatEur } from '../lib/pricing';
+  import { loadShopConfig, type ShopConfig } from '../scripts/shop-config';
 
-  type Cfg = PricingConfig & { mrBrand: string };
-  const cfg: Cfg = JSON.parse(document.getElementById('cfg')!.textContent!);
   const form = document.querySelector<HTMLFormElement>('[data-form]')!;
-  const qty = Math.min(readCart().qty, cfg.maxQty);
+  let cfg: ShopConfig = { unitCents: 0, maxQty: 0, shipping: [], mrBrand: '' };
+  let qty = 0;
 
-  if (qty < 1) {
-    document.querySelector<HTMLElement>('[data-empty]')!.hidden = false;
-  } else {
-    form.hidden = false;
-    const t = computeTotals(qty, cfg);
-    form.querySelector('[data-qty]')!.textContent = String(qty);
-    form.querySelector('[data-subtotal]')!.textContent = formatEur(t.subtotalCents);
-    form.querySelector('[data-shipping]')!.textContent = formatEur(t.shippingCents);
-    form.querySelector('[data-total]')!.textContent = formatEur(t.totalCents);
+  loadShopConfig()
+    .then((loaded) => {
+      cfg = loaded;
+      qty = Math.min(readCart().qty, cfg.maxQty);
+      if (qty < 1) {
+        document.querySelector<HTMLElement>('[data-empty]')!.hidden = false;
+        return;
+      }
+      form.hidden = false;
+      const t = computeTotals(qty, cfg);
+      form.querySelector('[data-qty]')!.textContent = String(qty);
+      form.querySelector('[data-subtotal]')!.textContent = formatEur(t.subtotalCents);
+      form.querySelector('[data-shipping]')!.textContent = formatEur(t.shippingCents);
+      form.querySelector('[data-total]')!.textContent = formatEur(t.totalCents);
+      if (cfg.mrBrand) startRelayWidget().catch(() => useManualRelay());
+    })
+    .catch(() => {
+      document.querySelector<HTMLElement>('[data-load-error]')!.hidden = false;
+    });
+
+  function loadScript(src: string, integrity?: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      if (integrity) {
+        s.integrity = integrity;
+        s.crossOrigin = 'anonymous';
+      }
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error(src));
+      document.head.appendChild(s);
+    });
   }
 
-  // Widget Mondial Relay (seulement si MR_BRAND est configuré).
+  function useManualRelay() {
+    cfg.mrBrand = '';
+    document.querySelector<HTMLElement>('[data-mr-block]')!.hidden = true;
+    document.querySelector<HTMLElement>('[data-manual-hint]')!.hidden = false;
+    document.querySelector<HTMLElement>('[data-relay-fields]')!.hidden = false;
+  }
+
+  // Widget Mondial Relay (seulement si un code enseigne est configuré côté PHP).
   type Relay = { ID: string; Nom: string; Adresse1: string; Adresse2: string; CP: string; Ville: string; Pays: string };
-  const $ = (window as any).jQuery;
-  if (cfg.mrBrand && $ && $.fn.MR_ParcelShopPicker) {
+  async function startRelayWidget() {
+    await loadScript('https://code.jquery.com/jquery-3.7.1.min.js', 'sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=');
+    await loadScript('https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.min.js');
+    const $ = (window as any).jQuery;
+    if (!$?.fn?.MR_ParcelShopPicker) throw new Error('widget MR indisponible');
+    document.querySelector<HTMLElement>('[data-mr-block]')!.hidden = false;
+    document.querySelector<HTMLElement>('[data-manual-hint]')!.hidden = true;
+    document.querySelector<HTMLElement>('[data-relay-fields]')!.hidden = true;
     const set = (name: string, value: string) => ((form.elements.namedItem(name) as HTMLInputElement).value = value);
     $('#mr-widget').MR_ParcelShopPicker({
       Target: '#mr-target',
@@ -140,9 +168,6 @@ const clientCfg = { ...pricing, mrBrand };
         clearError('relayName');
       },
     });
-  } else if (cfg.mrBrand) {
-    // Le widget n'a pas pu se charger : on bascule sur la saisie manuelle.
-    document.querySelector<HTMLElement>('[data-relay-fields]')!.hidden = false;
   }
 
   function clearError(name: string) {

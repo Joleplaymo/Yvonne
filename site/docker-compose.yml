@@ -2,19 +2,15 @@ name: vanessagandino
 
 services:
   app:
-    build:
-      context: .
-      args:
-        SITE_DOMAINS: ${DOMAIN:-localhost},www.${DOMAIN:-localhost}
+    build: .
     restart: unless-stopped
     env_file: .env
     environment:
-      DATA_DIR: /data
       PUBLIC_BASE_URL: https://${DOMAIN:-localhost}
     volumes:
       - data:/data
     expose:
-      - "4321"
+      - "80"
 
   caddy:
     image: caddy:2.10-alpine

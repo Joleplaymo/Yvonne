@@ -1,0 +1,48 @@
+Options -Indexes
+DirectoryIndex index.html index.php
+AddDefaultCharset UTF-8
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-Frame-Options "DENY"
+</IfModule>
+
+# Bases de données et sauvegardes : jamais servies.
+<FilesMatch "\.(sqlite|sqlite-wal|sqlite-shm|db|bak)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+</IfModule>
+
+RewriteEngine On
+
+# HTTPS obligatoire (sauf en local et derrière un proxy qui a déjà terminé le HTTPS).
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Code interne.
+RewriteRule ^_prive(/|$) - [F,L]
+
+# Routes dynamiques (PHP).
+RewriteRule ^api/config$ api/config.php [L]
+RewriteRule ^api/orders$ api/orders.php [L]
+RewriteRule ^merci$ merci.php [L,QSA]
+RewriteRule ^admin/?$ admin/index.php [L,QSA]
+RewriteRule ^admin/export\.csv$ admin/export.php [L]
+RewriteRule ^admin/deconnexion$ admin/deconnexion.php [L]
+RewriteRule ^admin/(YV-[0-9]+)$ admin/commande.php?ref=$1 [L,QSA]
+
+# Pages statiques sans extension : /panier -> panier.html
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^([a-z0-9-]+)$ $1.html [L]
