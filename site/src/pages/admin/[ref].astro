@@ -1,0 +1,135 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { orders } from '../../lib/server';
+import { STATUS_LABELS } from '../../lib/db';
+import { formatEur } from '../../lib/pricing';
+import { mailOrderPaid, mailOrderShipped, orderPageUrl } from '../../lib/mail';
+
+const store = orders();
+const ref = Astro.params.ref ?? '';
+let order = store.byRef(ref);
+if (!order) return new Response('Commande introuvable', { status: 404 });
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+  const notify = form.get('notify') === 'on';
+  if (action === 'paid') {
+    order = store.setStatus(ref, 'payee')!;
+    if (notify) await mailOrderPaid(order);
+  } else if (action === 'ship') {
+    const tracking = String(form.get('tracking') ?? '').trim().slice(0, 40);
+    order = store.setStatus(ref, 'expediee', tracking)!;
+    if (notify) await mailOrderShipped(order);
+  } else if (action === 'cancel') {
+    store.setStatus(ref, 'annulee');
+  } else if (action === 'reopen') {
+    store.setStatus(ref, 'attente_paiement');
+  } else if (action === 'note') {
+    store.setAdminNote(ref, String(form.get('admin_note') ?? ''));
+  }
+  return Astro.redirect(`/admin/${ref}?ok=${action}`, 303);
+}
+
+const ok = Astro.url.searchParams.get('ok');
+const date = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Paris' }) : '—';
+
+// Bloc prêt à recopier dans le formulaire d'envoi Mondial Relay.
+const labelBlock = [
+  `${order.first_name} ${order.last_name}`,
+  order.phone,
+  order.email,
+  `Point relais : ${order.relay_name}${order.relay_id ? ` (n° ${order.relay_id})` : ''}`,
+  order.relay_address,
+  `${order.relay_postcode} ${order.relay_city} ${order.relay_country}`,
+  `Colis : ${order.qty} livre${order.qty > 1 ? 's' : ''}`,
+].join('\n');
+---
+<Admin title={order.ref}>
+  <p><a href="/admin">← Toutes les commandes</a></p>
+  <h1>{order.ref} <span class={`pill ${order.status}`}>{STATUS_LABELS[order.status]}</span></h1>
+  {ok && <p class="notice">Enregistré.</p>}
+
+  <div class="detail">
+    <section class="panel">
+      <h2>Commande</h2>
+      <p>Passée le {date(order.created_at)}</p>
+      <table class="totals">
+        <tbody>
+          <tr><td>{order.qty} × livre à {formatEur(order.unit_cents)}</td><td>{formatEur(order.qty * order.unit_cents)}</td></tr>
+          <tr><td>Livraison</td><td>{formatEur(order.shipping_cents)}</td></tr>
+          <tr class="total"><td>Total attendu sur Revolut</td><td>{formatEur(order.total_cents)}</td></tr>
+        </tbody>
+      </table>
+      <p>Payée : {date(order.paid_at)}<br />Expédiée : {date(order.shipped_at)}{order.tracking && <> — suivi <strong>{order.tracking}</strong></>}</p>
+      {order.note && <p><strong>Message du client :</strong><br />{order.note}</p>}
+      <p><a href={orderPageUrl(order)} target="_blank">Page de suivi client ↗</a></p>
+    </section>
+
+    <section class="panel">
+      <h2>Pour l'étiquette Mondial Relay</h2>
+      <pre data-label>{labelBlock}</pre>
+      <div class="cta-row">
+        <button class="cta outline" type="button" data-copy-label>Copier</button>
+        <a class="cta outline" href="https://www.mondialrelay.fr/envoi-de-colis/" target="_blank" rel="noopener">Créer l'envoi ↗</a>
+      </div>
+    </section>
+  </div>
+
+  <section class="actions">
+    <h2>Actions</h2>
+    {order.status === 'attente_paiement' && (
+      <form method="post" class="act">
+        <input type="hidden" name="action" value="paid" />
+        <label><input type="checkbox" name="notify" checked /> prévenir le client par e-mail</label>
+        <button class="cta">Paiement Revolut reçu ({formatEur(order.total_cents)})</button>
+      </form>
+    )}
+    {(order.status === 'payee' || order.status === 'attente_paiement') && (
+      <form method="post" class="act">
+        <input type="hidden" name="action" value="ship" />
+        <div class="field"><label for="tracking">N° de suivi Mondial Relay</label><input id="tracking" name="tracking" maxlength="40" /></div>
+        <label><input type="checkbox" name="notify" checked /> envoyer le suivi au client</label>
+        <button class="cta terra">Marquer expédiée</button>
+      </form>
+    )}
+    {order.status !== 'annulee' && order.status !== 'expediee' && (
+      <form method="post" class="act" onsubmit="return confirm('Annuler cette commande ?')">
+        <input type="hidden" name="action" value="cancel" />
+        <button class="cta outline">Annuler la commande</button>
+      </form>
+    )}
+    {order.status === 'annulee' && (
+      <form method="post" class="act">
+        <input type="hidden" name="action" value="reopen" />
+        <button class="cta outline">Réactiver (en attente de paiement)</button>
+      </form>
+    )}
+    <form method="post" class="act note">
+      <input type="hidden" name="action" value="note" />
+      <div class="field"><label for="admin_note">Note interne</label><textarea id="admin_note" name="admin_note">{order.admin_note}</textarea></div>
+      <button class="cta outline">Enregistrer la note</button>
+    </form>
+  </section>
+</Admin>
+
+<script>
+  const btn = document.querySelector<HTMLButtonElement>('[data-copy-label]');
+  btn?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(document.querySelector('[data-label]')!.textContent!);
+    btn.textContent = 'Copié ✓';
+  });
+</script>
+
+<style>
+  .detail { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 20px 0 32px; }
+  .detail h2, .actions h2 { font-size: 22px; margin-bottom: 10px; }
+  pre { background: #fff; border-radius: 10px; padding: 14px; font-size: 14.5px; white-space: pre-wrap; margin: 0 0 14px; }
+  .actions { display: flex; flex-direction: column; gap: 18px; }
+  .act { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding: 18px; border: 2px solid var(--cream-2); border-radius: 14px; }
+  .act > label { font-size: 14.5px; display: flex; gap: 6px; align-items: center; }
+  .act .field { min-width: 240px; }
+  .note { flex-direction: column; align-items: stretch; }
+  @media (max-width: 760px) { .detail { grid-template-columns: 1fr; } }
+</style>

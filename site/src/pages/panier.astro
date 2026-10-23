@@ -1,0 +1,107 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Steps from '../components/Steps.astro';
+import { Image } from 'astro:assets';
+import cover from '../assets/couverture.png';
+import { pricing } from '../lib/server';
+import { formatEur } from '../lib/pricing';
+---
+<Base title="Panier — Les hormones d'Yvonne" noindex>
+  <script type="application/json" id="pricing" set:html={JSON.stringify(pricing)} />
+  <section class="section">
+    <Steps current={1} />
+    <h1 style="font-size:44px;">Votre panier</h1>
+
+    <div class="empty notice" data-empty hidden>
+      Votre panier est vide.
+      <a class="cta" href="/panier?ajouter=1" style="margin-left:auto;">Ajouter le livre</a>
+    </div>
+
+    <div class="cart-grid" data-filled hidden>
+      <div class="line">
+        <Image src={cover} alt="" width={120} height={180} class="thumb" />
+        <div class="info">
+          <h2>Les hormones d'Yvonne</h2>
+          <p>Vanessa Gandino — livre broché</p>
+          <p class="unit">{formatEur(pricing.unitCents)} l'exemplaire</p>
+          <div class="qty" role="group" aria-label="Quantité">
+            <button type="button" data-dec aria-label="Retirer un exemplaire"><Icon name="minus" size={20} /></button>
+            <output data-qty aria-live="polite">1</output>
+            <button type="button" data-inc aria-label="Ajouter un exemplaire"><Icon name="plus" size={20} /></button>
+          </div>
+          <p class="max">Maximum {pricing.maxQty} exemplaires par commande.</p>
+          <button type="button" class="remove" data-remove>Retirer du panier</button>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <table class="totals">
+          <tbody>
+            <tr><td>Sous-total</td><td data-subtotal></td></tr>
+            <tr><td>Livraison en point relais<br /><small>Mondial Relay</small></td><td data-shipping></td></tr>
+            <tr class="total"><td>Total</td><td data-total></td></tr>
+          </tbody>
+        </table>
+        <a class="cta terra" href="/commande" style="width:100%; margin-top:18px;">Choisir mon point relais</a>
+        <p class="reassure"><Icon name="package" size={18} /> Expédié avec soin par l'autrice</p>
+      </aside>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { readCart, writeCart } from '../scripts/cart';
+  import { computeTotals, formatEur, type PricingConfig } from '../lib/pricing';
+
+  const cfg: PricingConfig = JSON.parse(document.getElementById('pricing')!.textContent!);
+  const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+
+  const params = new URLSearchParams(location.search);
+  if (params.has('ajouter')) {
+    const { qty } = readCart();
+    writeCart({ qty: Math.max(qty, 1) });
+    history.replaceState(null, '', '/panier');
+  }
+
+  function render() {
+    const qty = Math.min(readCart().qty, cfg.maxQty);
+    $('[data-empty]').hidden = qty > 0;
+    $('[data-filled]').hidden = qty < 1;
+    if (qty < 1) return;
+    const t = computeTotals(qty, cfg);
+    $('[data-qty]').textContent = String(qty);
+    $('[data-subtotal]').textContent = formatEur(t.subtotalCents);
+    $('[data-shipping]').textContent = formatEur(t.shippingCents);
+    $('[data-total]').textContent = formatEur(t.totalCents);
+    $<HTMLButtonElement>('[data-dec]').disabled = qty <= 1;
+    $<HTMLButtonElement>('[data-inc]').disabled = qty >= cfg.maxQty;
+  }
+
+  $('[data-inc]').addEventListener('click', () => writeCart({ qty: Math.min(readCart().qty + 1, cfg.maxQty) }));
+  $('[data-dec]').addEventListener('click', () => writeCart({ qty: Math.max(readCart().qty - 1, 1) }));
+  $('[data-remove]').addEventListener('click', () => writeCart({ qty: 0 }));
+  window.addEventListener('cart:change', render);
+  window.addEventListener('storage', render);
+  render();
+</script>
+
+<style>
+  .cart-grid { display: grid; grid-template-columns: 1fr 380px; gap: 40px; align-items: start; }
+  .line { display: flex; gap: 26px; align-items: flex-start; }
+  .line :global(.thumb) { width: 120px; height: auto; box-shadow: 0 12px 30px rgba(14, 48, 73, 0.22); flex: 0 0 auto; }
+  .info h2 { font-size: 26px; }
+  .info p { margin: 6px 0 0; }
+  .unit { font-weight: 700; }
+  .qty { display: inline-flex; align-items: center; gap: 4px; margin-top: 18px; border: 2px solid var(--navy); border-radius: 12px; padding: 4px; }
+  .qty button { width: 44px; height: 44px; border: none; border-radius: 8px; background: transparent; color: var(--navy); cursor: pointer; display: grid; place-content: center; }
+  .qty button:hover:not(:disabled) { background: var(--sand); }
+  .qty button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .qty output { min-width: 36px; text-align: center; font-weight: 900; font-size: 20px; }
+  .max { font-size: 14px; opacity: 0.75; }
+  .remove { margin-top: 14px; background: none; border: none; padding: 0; color: var(--terra); font: 700 15px Figtree, sans-serif; cursor: pointer; text-decoration: underline; }
+  .empty { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .reassure { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--olive); margin: 16px 0 0; }
+  @media (max-width: 900px) { .cart-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) { .line { flex-direction: column; } }
+</style>

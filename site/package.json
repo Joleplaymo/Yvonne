@@ -1,0 +1,28 @@
+{
+  "name": "vanessagandino-site",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "start": "node ./dist/server/entry.mjs",
+    "test": "vitest run",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/node": "11.1.9",
+    "astro": "7.4.2",
+    "lucide-static": "1.61.0",
+    "nodemailer": "10.2.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "@types/nodemailer": "8.0.2",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

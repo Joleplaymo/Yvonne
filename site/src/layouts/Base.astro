@@ -1,0 +1,72 @@
+---
+import '../styles/global.css';
+import Icon from '../components/Icon.astro';
+import { Image } from 'astro:assets';
+import instagram from '../assets/instagram.png';
+
+interface Props {
+  title: string;
+  description?: string;
+  noindex?: boolean;
+}
+const {
+  title,
+  description = "Les hormones d'Yvonne — LE livre qui met enfin les vrais mots (et de l'humour) sur ce que les hormones nous font vivre. Par Vanessa Gandino.",
+  noindex = false,
+} = Astro.props;
+const home = Astro.url.pathname === '/' ? '' : '/';
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+    <slot name="head" />
+  </head>
+  <body>
+    <div class="frame">
+      <nav class="navlite" aria-label="Navigation principale">
+        <a class="brand" href="/">vanessa gandino</a>
+        <a class="push hide-sm" href={`${home}#livre`}>le livre</a>
+        <a class="hide-sm" href={`${home}#autrice`}>l'autrice</a>
+        <a class="order" href="/panier">
+          je commande <span class="cart-badge" data-cart-badge hidden></span>
+        </a>
+      </nav>
+
+      <main>
+        <slot />
+      </main>
+
+      <footer class="footer on-olive">
+        <span style="font-size:15px; opacity:.9;">Presse, libraires et partenariats — <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a></span>
+        <div class="links">
+          <a href="https://www.instagram.com/leshormonesdyvonne/" target="_blank" rel="noopener" aria-label="Instagram">
+            <Image src={instagram} alt="" width={40} height={40} />
+          </a>
+          <a href="mailto:contact@vanessagandino.fr" aria-label="E-mail"><Icon name="mail" /></a>
+        </div>
+      </footer>
+    </div>
+    <script>
+      import { readCart } from '../scripts/cart';
+      const badge = document.querySelector<HTMLElement>('[data-cart-badge]');
+      const sync = () => {
+        const { qty } = readCart();
+        if (!badge) return;
+        badge.hidden = qty < 1;
+        badge.textContent = String(qty);
+      };
+      sync();
+      window.addEventListener('cart:change', sync);
+      window.addEventListener('storage', sync);
+    </script>
+  </body>
+</html>

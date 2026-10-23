@@ -1,0 +1,115 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Steps from '../components/Steps.astro';
+import { orders, revolutTemplate } from '../lib/server';
+import { formatEur } from '../lib/pricing';
+import { revolutLink } from '../lib/revolut';
+import { STATUS_LABELS } from '../lib/db';
+import { timingSafeEqual } from 'node:crypto';
+
+const ref = Astro.url.searchParams.get('ref') ?? '';
+const token = Astro.url.searchParams.get('t') ?? '';
+const found = /^YV-\d{4,}$/.test(ref) ? orders().byRef(ref) : undefined;
+const order =
+  found && token.length === found.token.length && timingSafeEqual(Buffer.from(token), Buffer.from(found.token))
+    ? found
+    : undefined;
+if (!order) Astro.response.status = 404;
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const pay = order ? revolutLink(revolutTemplate, order.total_cents, order.ref) : '';
+const amountInLink = revolutTemplate.includes('{amount}');
+---
+<Base title={order ? `Commande ${order.ref} — Les hormones d'Yvonne` : 'Commande introuvable'} noindex>
+  <section class="section">
+    {!order ? (
+      <>
+        <h1 style="font-size:40px;">Commande introuvable</h1>
+        <p>Le lien est peut-être incomplet. Retrouvez le bon lien dans l'e-mail de confirmation, ou écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a>.</p>
+      </>
+    ) : (
+      <>
+        <Steps current={3} />
+        <p class="ref">Commande <strong>{order.ref}</strong> · {STATUS_LABELS[order.status]}</p>
+
+        {order.status === 'attente_paiement' && (
+          <div class="pay-grid">
+            <div>
+              <h1 style="font-size:44px;">Merci {order.first_name} !<br />Dernière étape : le paiement.</h1>
+              <ol class="howto">
+                <li>Cliquez sur le bouton ci-dessous : Revolut s'ouvre{amountInLink ? ' avec le montant déjà rempli' : ''}.</li>
+                {!amountInLink && <li>Saisissez le montant exact : <strong>{formatEur(order.total_cents)}</strong>.</li>}
+                <li>Dans le message du paiement, indiquez la référence <strong class="mono">{order.ref}</strong>.</li>
+                <li>Je confirme la réception et prépare votre colis. Vous recevez un e-mail à chaque étape.</li>
+              </ol>
+              <div class="cta-row" style="margin-top:28px;">
+                <a class="cta terra" href={pay} target="_blank" rel="noopener">Payer {formatEur(order.total_cents)} avec Revolut</a>
+                <button class="cta outline" type="button" data-copy={order.ref}><Icon name="copy" size={18} /> Copier la référence</button>
+              </div>
+              <p class="hint">Un souci pour payer ? <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a></p>
+            </div>
+            <aside class="panel">
+              <table class="totals">
+                <tbody>
+                  <tr><td>{order.qty} × Les hormones d'Yvonne</td><td>{formatEur(order.qty * order.unit_cents)}</td></tr>
+                  <tr><td>Livraison point relais</td><td>{formatEur(order.shipping_cents)}</td></tr>
+                  <tr class="total"><td>Total</td><td>{formatEur(order.total_cents)}</td></tr>
+                </tbody>
+              </table>
+              <p class="relay"><Icon name="map-pin" size={18} /> <span><strong>{order.relay_name}</strong><br />{order.relay_address}<br />{order.relay_postcode} {order.relay_city}</span></p>
+            </aside>
+          </div>
+        )}
+
+        {order.status === 'payee' && (
+          <>
+            <h1 style="font-size:44px;">Paiement reçu, merci !</h1>
+            <p class="lead">Je prépare votre colis avec soin. Vous recevrez le numéro de suivi par e-mail dès l'expédition vers <strong>{order.relay_name}</strong>, {order.relay_city}.</p>
+          </>
+        )}
+
+        {order.status === 'expediee' && (
+          <>
+            <h1 style="font-size:44px;">Votre colis est en route</h1>
+            <p class="lead">Destination : <strong>{order.relay_name}</strong>, {order.relay_address}, {order.relay_postcode} {order.relay_city}.</p>
+            {order.tracking && <p class="lead">Numéro de suivi Mondial Relay : <strong class="mono">{order.tracking}</strong> — <a href="https://www.mondialrelay.fr/suivi-de-colis/" target="_blank" rel="noopener">suivre le colis</a></p>}
+          </>
+        )}
+
+        {order.status === 'annulee' && (
+          <>
+            <h1 style="font-size:44px;">Commande annulée</h1>
+            <p class="lead">Une question ? <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a></p>
+          </>
+        )}
+      </>
+    )}
+  </section>
+</Base>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.copy!);
+        b.lastChild!.textContent = ' Référence copiée';
+      } catch {
+        /* presse-papiers indisponible : la référence reste affichée à l'écran */
+      }
+    }),
+  );
+</script>
+
+<style>
+  .ref { font-size: 15px; font-weight: 600; margin: 0 0 16px; }
+  .pay-grid { display: grid; grid-template-columns: 1fr 380px; gap: 40px; align-items: start; }
+  .howto { font-size: 17px; line-height: 1.6; padding-left: 22px; margin: 24px 0 0; }
+  .howto li + li { margin-top: 6px; }
+  .mono { font-family: ui-monospace, Consolas, monospace; background: var(--sand); padding: 1px 6px; border-radius: 6px; }
+  .hint { font-size: 14.5px; margin-top: 18px; }
+  .lead { font-size: 18px; line-height: 1.6; max-width: 60ch; }
+  .relay { display: flex; gap: 10px; margin: 18px 0 0; font-size: 15px; line-height: 1.5; }
+  .relay :global(svg) { flex: 0 0 auto; margin-top: 2px; color: var(--terra); }
+  @media (max-width: 900px) { .pay-grid { grid-template-columns: 1fr; } }
+</style>

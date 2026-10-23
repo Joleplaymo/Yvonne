@@ -1,0 +1,228 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Steps from '../components/Steps.astro';
+import { pricing, mrBrand } from '../lib/server';
+
+const clientCfg = { ...pricing, mrBrand };
+---
+<Base title="Livraison & coordonnées — Les hormones d'Yvonne" noindex>
+  <Fragment slot="head">
+    {mrBrand && <script is:inline src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>}
+    {mrBrand && <script is:inline src="https://widget.mondialrelay.com/parcelshop-picker/jquery.plugin.mondialrelay.parcelshoppicker.min.js"></script>}
+  </Fragment>
+  <script type="application/json" id="cfg" set:html={JSON.stringify(clientCfg)} />
+
+  <section class="section">
+    <Steps current={2} />
+    <a href="/panier" class="back"><Icon name="arrow-left" size={18} /> Modifier le panier</a>
+    <h1 style="font-size:44px; margin-top:10px;">Livraison & coordonnées</h1>
+
+    <div class="notice" data-empty hidden style="margin-top:24px;">
+      Votre panier est vide. <a href="/panier?ajouter=1">Ajouter le livre</a>
+    </div>
+
+    <form class="checkout" data-form novalidate hidden>
+      <div class="col">
+        <fieldset>
+          <legend>Vos coordonnées</legend>
+          <div class="form-grid">
+            <div class="field"><label for="firstName">Prénom</label><input id="firstName" name="firstName" autocomplete="given-name" required maxlength="80" /><span class="err" data-err="firstName"></span></div>
+            <div class="field"><label for="lastName">Nom</label><input id="lastName" name="lastName" autocomplete="family-name" required maxlength="80" /><span class="err" data-err="lastName"></span></div>
+            <div class="field"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="160" /><span class="err" data-err="email"></span></div>
+            <div class="field"><label for="phone">Téléphone mobile</label><input id="phone" name="phone" type="tel" autocomplete="tel" required maxlength="20" /><span class="err" data-err="phone"></span></div>
+          </div>
+          <p class="hint">Le téléphone sert uniquement à Mondial Relay pour vous prévenir de l'arrivée du colis.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Point relais Mondial Relay</legend>
+          {mrBrand ? (
+            <div>
+              <p class="hint" style="margin:0 0 12px;">Saisissez votre code postal, puis <strong>cliquez sur le repère</strong> du point relais choisi sur la carte. Les relais grisés sont fermés.</p>
+              <div id="mr-widget" class="mr-widget"></div>
+              <input type="hidden" id="mr-target" />
+              <p class="relay-picked" data-relay-picked hidden></p>
+            </div>
+          ) : (
+            <p class="hint">
+              <Icon name="map-pin" size={18} />
+              <a href="https://www.mondialrelay.fr/trouver-le-point-relais-le-plus-proche-de-chez-moi/" target="_blank" rel="noopener">Trouver mon point relais le plus proche</a>
+              (s'ouvre dans un nouvel onglet), puis recopiez ses informations ci-dessous.
+            </p>
+          )}
+          <div class="form-grid relay-fields" data-relay-fields hidden={!!mrBrand}>
+            <div class="field"><label for="relayName">Nom du point relais</label><input id="relayName" name="relayName" required maxlength="120" placeholder="Ex. Tabac Presse du Centre" /><span class="err" data-err="relayName"></span></div>
+            <div class="field"><label for="relayId">N° du point relais <small>(facultatif)</small></label><input id="relayId" name="relayId" maxlength="20" placeholder="Ex. 012345" /><span class="err" data-err="relayId"></span></div>
+            <div class="field full"><label for="relayAddress">Adresse</label><input id="relayAddress" name="relayAddress" required maxlength="200" /><span class="err" data-err="relayAddress"></span></div>
+            <div class="field"><label for="relayPostcode">Code postal</label><input id="relayPostcode" name="relayPostcode" required maxlength="10" inputmode="numeric" /><span class="err" data-err="relayPostcode"></span></div>
+            <div class="field"><label for="relayCity">Ville</label><input id="relayCity" name="relayCity" required maxlength="80" /><span class="err" data-err="relayCity"></span></div>
+            <div class="field">
+              <label for="relayCountry">Pays</label>
+              <select id="relayCountry" name="relayCountry">
+                <option value="FR" selected>France</option>
+                <option value="BE">Belgique</option>
+                <option value="LU">Luxembourg</option>
+              </select>
+              <span class="err" data-err="relayCountry"></span>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Un petit mot ? <small>(facultatif)</small></legend>
+          <div class="field"><label for="note" class="visually-hidden">Message</label><textarea id="note" name="note" maxlength="1000" placeholder="Une dédicace, une précision…"></textarea></div>
+        </fieldset>
+        <div class="hp" aria-hidden="true"><label for="website">Ne pas remplir</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
+      </div>
+
+      <aside class="panel summary">
+        <h2 style="font-size:24px; margin-bottom:12px;">Récapitulatif</h2>
+        <table class="totals">
+          <tbody>
+            <tr><td><span data-qty></span> × Les hormones d'Yvonne</td><td data-subtotal></td></tr>
+            <tr><td>Livraison point relais</td><td data-shipping></td></tr>
+            <tr class="total"><td>Total</td><td data-total></td></tr>
+          </tbody>
+        </table>
+        <div class="notice error" data-form-error hidden role="alert"></div>
+        <button class="cta terra" type="submit" style="width:100%; margin-top:18px;" data-submit>Valider et payer avec Revolut</button>
+        <p class="hint" style="margin-top:14px;">Vous recevrez le lien de paiement Revolut et un e-mail récapitulatif. Le colis part dès réception du paiement.</p>
+      </aside>
+    </form>
+  </section>
+</Base>
+
+<script>
+  import { readCart, writeCart } from '../scripts/cart';
+  import { computeTotals, formatEur, type PricingConfig } from '../lib/pricing';
+
+  type Cfg = PricingConfig & { mrBrand: string };
+  const cfg: Cfg = JSON.parse(document.getElementById('cfg')!.textContent!);
+  const form = document.querySelector<HTMLFormElement>('[data-form]')!;
+  const qty = Math.min(readCart().qty, cfg.maxQty);
+
+  if (qty < 1) {
+    document.querySelector<HTMLElement>('[data-empty]')!.hidden = false;
+  } else {
+    form.hidden = false;
+    const t = computeTotals(qty, cfg);
+    form.querySelector('[data-qty]')!.textContent = String(qty);
+    form.querySelector('[data-subtotal]')!.textContent = formatEur(t.subtotalCents);
+    form.querySelector('[data-shipping]')!.textContent = formatEur(t.shippingCents);
+    form.querySelector('[data-total]')!.textContent = formatEur(t.totalCents);
+  }
+
+  // Widget Mondial Relay (seulement si MR_BRAND est configuré).
+  type Relay = { ID: string; Nom: string; Adresse1: string; Adresse2: string; CP: string; Ville: string; Pays: string };
+  const $ = (window as any).jQuery;
+  if (cfg.mrBrand && $ && $.fn.MR_ParcelShopPicker) {
+    const set = (name: string, value: string) => ((form.elements.namedItem(name) as HTMLInputElement).value = value);
+    $('#mr-widget').MR_ParcelShopPicker({
+      Target: '#mr-target',
+      Brand: cfg.mrBrand,
+      Country: 'FR',
+      AllowedCountries: 'FR,BE,LU',
+      ColLivMod: '24R',
+      NbResults: '7',
+      Responsive: true,
+      ShowResultsOnMap: true,
+      OnParcelShopSelected: (d: Relay) => {
+        set('relayId', d.ID);
+        set('relayName', d.Nom);
+        set('relayAddress', [d.Adresse1, d.Adresse2].filter(Boolean).join(', '));
+        set('relayPostcode', d.CP);
+        set('relayCity', d.Ville);
+        set('relayCountry', d.Pays || 'FR');
+        const picked = document.querySelector<HTMLElement>('[data-relay-picked]')!;
+        picked.hidden = !d.ID;
+        picked.textContent = d.ID ? `Point relais choisi : ${d.Nom}, ${d.CP} ${d.Ville}` : '';
+        clearError('relayName');
+      },
+    });
+  } else if (cfg.mrBrand) {
+    // Le widget n'a pas pu se charger : on bascule sur la saisie manuelle.
+    document.querySelector<HTMLElement>('[data-relay-fields]')!.hidden = false;
+  }
+
+  function clearError(name: string) {
+    const el = form.querySelector(`[data-err="${name}"]`);
+    if (el) el.textContent = '';
+    form.elements.namedItem(name) instanceof HTMLElement &&
+      (form.elements.namedItem(name) as HTMLElement).closest('.field')?.classList.remove('invalid');
+  }
+
+  function showErrors(errors: Record<string, string>) {
+    let first: HTMLElement | null = null;
+    for (const [name, msg] of Object.entries(errors)) {
+      const el = form.querySelector(`[data-err="${name}"]`);
+      if (el) el.textContent = msg;
+      const input = form.elements.namedItem(name) as HTMLElement | null;
+      input?.closest('.field')?.classList.add('invalid');
+      first ??= input;
+    }
+    const relayMissing = ['relayName', 'relayAddress', 'relayPostcode', 'relayCity'].some((k) => k in errors);
+    const banner = form.querySelector<HTMLElement>('[data-form-error]')!;
+    banner.hidden = false;
+    banner.textContent =
+      cfg.mrBrand && relayMissing ? 'Merci de choisir un point relais sur la carte.' : 'Merci de corriger les champs indiqués.';
+    if (first && !(cfg.mrBrand && relayMissing)) first.focus();
+  }
+
+  form.addEventListener('input', (e) => clearError((e.target as HTMLInputElement).name));
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const button = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+    const banner = form.querySelector<HTMLElement>('[data-form-error]')!;
+    banner.hidden = true;
+    form.querySelectorAll('[data-err]').forEach((el) => (el.textContent = ''));
+    form.querySelectorAll('.invalid').forEach((el) => el.classList.remove('invalid'));
+
+    const body = Object.fromEntries(new FormData(form).entries());
+    button.disabled = true;
+    button.textContent = 'Enregistrement…';
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body, qty }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        writeCart({ qty: 0 });
+        location.assign(data.url);
+        return;
+      }
+      if (data.errors) showErrors(data.errors);
+      else {
+        banner.hidden = false;
+        banner.textContent = data.message ?? 'Une erreur est survenue. Réessayez dans un instant.';
+      }
+    } catch {
+      banner.hidden = false;
+      banner.textContent = 'Connexion impossible. Vérifiez votre réseau et réessayez.';
+    }
+    button.disabled = false;
+    button.textContent = 'Valider et payer avec Revolut';
+  });
+</script>
+
+<style>
+  .back { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+  .checkout { display: grid; grid-template-columns: 1fr 380px; gap: 40px; align-items: start; margin-top: 30px; }
+  fieldset { border: none; padding: 0; margin: 0 0 34px; }
+  legend { font-weight: 900; font-size: 22px; letter-spacing: -0.02em; margin-bottom: 16px; padding: 0; }
+  legend small, label small { font-weight: 400; font-size: 14px; opacity: 0.7; }
+  .hint { font-size: 14.5px; line-height: 1.5; margin: 12px 0 0; }
+  .hint :global(svg) { vertical-align: -3px; color: var(--terra); }
+  .hint a { font-weight: 700; }
+  .relay-fields { margin-top: 18px; }
+  .summary { position: sticky; top: 96px; }
+  .mr-widget { width: 100%; min-height: 200px; background: #fff; border-radius: 12px; overflow: hidden; }
+  .relay-picked { margin: 12px 0 0; font-weight: 700; color: var(--olive); }
+  @media (max-width: 900px) {
+    .checkout { grid-template-columns: 1fr; }
+    .summary { position: static; }
+  }
+</style>

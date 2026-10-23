@@ -1,0 +1,51 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { orders } from '../../lib/server';
+import { STATUSES, STATUS_LABELS, type Status } from '../../lib/db';
+import { formatEur } from '../../lib/pricing';
+
+const raw = Astro.url.searchParams.get('statut');
+// Par défaut : ce qui demande une action (à encaisser, à expédier).
+const filter: Status | 'todo' | 'all' = (STATUSES as readonly string[]).includes(raw ?? '')
+  ? (raw as Status)
+  : raw === 'all' ? 'all' : 'todo';
+
+const store = orders();
+const counts = store.counts();
+const list =
+  filter === 'all' ? store.list()
+  : filter === 'todo' ? store.list().filter((o) => o.status === 'attente_paiement' || o.status === 'payee')
+  : store.list(filter);
+
+const date = (iso: string) =>
+  new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Paris' });
+---
+<Admin title="Commandes">
+  <h1>Commandes</h1>
+  <div class="tabs">
+    <a href="/admin" class:list={{ on: filter === 'todo' }}>À traiter ({counts.attente_paiement + counts.payee})</a>
+    {STATUSES.map((s) => <a href={`/admin?statut=${s}`} class:list={{ on: filter === s }}>{STATUS_LABELS[s]} ({counts[s]})</a>)}
+    <a href="/admin?statut=all" class:list={{ on: filter === 'all' }}>Toutes</a>
+  </div>
+
+  {list.length === 0 ? <p>Aucune commande ici.</p> : (
+    <table class="list">
+      <thead>
+        <tr><th>Réf.</th><th class="opt">Date</th><th>Client</th><th>Qté</th><th>Total</th><th class="opt">Relais</th><th>Statut</th></tr>
+      </thead>
+      <tbody>
+        {list.map((o) => (
+          <tr>
+            <td><a href={`/admin/${o.ref}`}><strong>{o.ref}</strong></a></td>
+            <td class="opt">{date(o.created_at)}</td>
+            <td>{o.first_name} {o.last_name}</td>
+            <td>{o.qty}</td>
+            <td>{formatEur(o.total_cents)}</td>
+            <td class="opt">{o.relay_city}</td>
+            <td><span class={`pill ${o.status}`}>{STATUS_LABELS[o.status]}</span></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</Admin>

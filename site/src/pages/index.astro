@@ -1,0 +1,194 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { Image } from 'astro:assets';
+import cover from '../assets/couverture.png';
+import back from '../assets/quatrieme.jpg';
+import portrait from '../assets/vanessa.png';
+import gardemanger from '../assets/gardemanger.jpg';
+
+const buy = '/panier?ajouter=1';
+---
+<Base title="Les hormones d'Yvonne — Vanessa Gandino">
+  <!-- HERO -->
+  <section class="hero on-navy">
+    <div class="grid-2 hero-grid">
+      <div>
+        <h1 class="bigword hero-title">les<br />hormones<br />d'Yvonne</h1>
+        <p class="lead"><b>LE</b> livre qui met enfin les vrais mots (et de l'humour) sur ce que les hormones nous font vivre</p>
+        <div class="cta-row" style="margin-top:34px;">
+          <a class="cta" href={buy}>Je le veux !!!!</a>
+          <button type="button" class="cta outline" data-open-extract>Lire un extrait</button>
+        </div>
+      </div>
+      <figure class="cover shadow-dark">
+        <Image src={cover} alt="Couverture du livre Les hormones d'Yvonne" widths={[360, 535]} sizes="(max-width: 760px) 70vw, 360px" loading="eager" fetchpriority="high" />
+      </figure>
+    </div>
+  </section>
+
+  <!-- LE LIVRE -->
+  <section id="livre" class="section book">
+    <h2 class="h-52">Une vie entière<br />à négocier avec<br />nos hormones !</h2>
+    <div class="grid-3 pillars">
+      <div><span>À en rire parfois</span><p>De la puberté à la ménopause, sans jamais de pause. Un corps qui change sans demander votre avis.</p></div>
+      <div><span>À en pleurer souvent</span><p>Les silences, les injonctions, les combats invisibles — et ce fameux « c'est hormonal ».</p></div>
+      <div><span>À en parler enfin</span><p>Raconter tout haut ce que des millions de femmes vivent tout bas. Un hommage à la force féminine.</p></div>
+    </div>
+  </section>
+
+  <!-- CITATION -->
+  <section class="section on-navy">
+    <h2 class="bigword hashtag">#balancetes<br />hormones</h2>
+    <blockquote class="quote">« si les hormones étaient un patron, il y aurait déjà eu une plainte collective mondiale pour harcèlement physique et moral. »</blockquote>
+    <div style="display:flex; justify-content:flex-end; margin-top:32px;"><a class="cta" href={buy}>Commander le livre</a></div>
+  </section>
+
+  <!-- COMMANDER -->
+  <section id="commander" class="section">
+    <div class="grid-2 order-grid">
+      <figure class="cover shadow-light">
+        <Image src={cover} alt="Couverture du livre Les hormones d'Yvonne" widths={[320, 535]} sizes="(max-width: 760px) 70vw, 320px" />
+      </figure>
+      <div>
+        <h2 style="font-size:38px;">Il est pour vous.<br />Il est à vous.</h2>
+        <p class="with-box"><span class="box"><Icon name="package" size={23} /></span>expédié avec soin en point relais Mondial Relay</p>
+        <div class="cta-row" style="margin-top:26px;">
+          <a class="cta" href={buy}>Je commande le livre</a>
+          <a class="cta outline" href="#distribution">Où le trouver près de chez moi</a>
+        </div>
+        <p class="fast"><Icon name="truck" size={22} /> Expédition rapide</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUTRICE -->
+  <section id="autrice" class="section on-navy">
+    <div class="grid-2 author-grid">
+      <figure class="portrait">
+        <Image src={portrait} alt="Portrait de Vanessa Gandino" widths={[360, 720]} sizes="(max-width: 760px) 90vw, 360px" />
+      </figure>
+      <div>
+        <h2 class="bigword" style="font-size:52px;">Vanessa<br />Gandino</h2>
+        <p style="font-size:18px; line-height:1.5; margin:24px 0 0;">J'ai la cinquantaine et un certain vécu hormonal !<br />J'écris comme je ressens. Naturellement. Sincèrement.</p>
+        <p class="author-quote">« Dans les hormones d'Yvonne, j'ai essayé de raconter tout haut ce que des millions de femmes vivent tout bas. J'ai pensé ce livre comme un hommage à la force féminine. »</p>
+        <p style="font-size:17px; margin:22px 0 0; color:var(--peach);">Hormonalement votre</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- OÙ LE TROUVER -->
+  <section id="distribution" class="section on-navy distribution">
+    <div class="dist-head">
+      <div>
+        <h2 style="font-size:40px;">Où trouver les hormones d'Yvonne</h2>
+        <p>Librairies indépendantes, concept stores et boutiques partenaires</p>
+      </div>
+      <a class="cta" href="https://vanessagandino.fr/points-de-vente">Voir tous les points de vente</a>
+    </div>
+    <div class="grid-3 cards">
+      <div class="card">
+        <span class="ic"><Icon name="globe" /></span>
+        <span class="card-title">En ligne</span>
+        <p>directement auprès de l'autrice — <a href="/panier?ajouter=1">commander ici</a></p>
+      </div>
+      <div class="card">
+        <span class="ic"><Icon name="store" /></span>
+        <span class="card-title">Concept stores</span>
+        <p>Lieux de vie, boutiques bien-être et adresses partenaires.</p>
+        <a class="partner" href="https://www.instagram.com/legardemanger_" target="_blank" rel="noopener">
+          <Image src={gardemanger} alt="" width={44} height={44} />
+          <span>Le Garde-Manger<br /><small>voir sur Instagram</small></span>
+        </a>
+      </div>
+      <div class="card">
+        <span class="ic"><Icon name="book-open" /></span>
+        <span class="card-title">Librairies indépendantes</span>
+        <p>les plus jolies libraires qui ont ouvert leurs portes à Yvonne</p>
+      </div>
+    </div>
+    <p class="pro">Vous êtes libraire ou commerçant et souhaitez référencer le livre ? Écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a></p>
+  </section>
+
+  <dialog class="extract" aria-label="Extrait : quatrième de couverture">
+    <form method="dialog"><button class="close" aria-label="Fermer"><Icon name="x" /></button></form>
+    <Image src={back} alt="Quatrième de couverture : « Pour raconter une vie entière sous influence hormonale, il fallait une voix. Une voix de femme. Yvonne. »" widths={[480, 900]} sizes="(max-width: 760px) 92vw, 480px" />
+    <a class="cta" href={buy} style="margin-top:18px; width:100%;">Je le veux !!!!</a>
+  </dialog>
+</Base>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('dialog.extract');
+  document.querySelectorAll('[data-open-extract]').forEach((b) => b.addEventListener('click', () => dialog?.showModal()));
+  dialog?.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+</script>
+
+<style>
+  .hero { padding: 76px var(--pad-x) 68px; }
+  .hero-grid { grid-template-columns: 1.25fr 0.75fr; gap: 56px; }
+  .hero-title { font-size: 82px; }
+  .lead { font-size: 20px; line-height: 1.45; margin: 30px 0 0; max-width: 34ch; }
+  .lead b { font-weight: 900; }
+  .cover { margin: 0; aspect-ratio: 400 / 600; }
+  .cover :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .shadow-dark { box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35); }
+  .shadow-light { box-shadow: 0 18px 44px rgba(14, 48, 73, 0.22); }
+
+  .book { padding-top: 72px; padding-bottom: 72px; }
+  .h-52 { font-size: 52px; }
+  .pillars { gap: 32px; margin-top: 44px; }
+  .pillars span { display: block; font-weight: 900; font-size: 19px; color: var(--terra); }
+  .pillars p { font-size: 16.5px; line-height: 1.6; margin: 8px 0 0; }
+
+  .hashtag { font-size: 44px; color: var(--peach); }
+  .quote { font-weight: 800; font-size: 30px; line-height: 1.28; margin: 36px 0 0 auto; max-width: 26ch; }
+
+  .order-grid { grid-template-columns: 0.55fr 1fr; gap: 56px; }
+  .with-box { font-size: 17px; line-height: 1.6; margin: 14px 0 0; max-width: 38ch; display: flex; align-items: center; gap: 12px; }
+  .box { display: inline-grid; place-content: center; width: 42px; height: 42px; flex: 0 0 auto; border-radius: 12px; background: var(--olive); color: var(--cream); }
+  .fast { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14.5px; color: var(--olive); margin: 26px 0 0; }
+
+  .author-grid { grid-template-columns: 0.5fr 1fr; gap: 52px; }
+  .portrait { margin: 0; background: var(--cream); aspect-ratio: 3 / 4; }
+  .portrait :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .author-quote { font-size: 17px; line-height: 1.6; margin: 20px 0 0; font-style: italic; max-width: 46ch; color: color-mix(in srgb, var(--cream) 86%, transparent); }
+
+  .distribution { border-top: 1px solid rgba(249, 240, 218, 0.12); }
+  .dist-head { display: flex; align-items: flex-end; gap: 40px; flex-wrap: wrap; }
+  .dist-head p { font-size: 17px; line-height: 1.6; margin: 12px 0 0; max-width: 46ch; color: var(--cream-2); }
+  .dist-head .cta { margin-left: auto; }
+  .cards { gap: 18px; margin-top: 38px; }
+  .card { background: rgba(249, 240, 218, 0.1); border-radius: 16px; padding: 28px; }
+  .card-title { display: block; font-weight: 900; font-size: 22px; margin-top: 14px; letter-spacing: -0.02em; }
+  .card p { font-size: 15px; line-height: 1.55; margin: 8px 0 0; color: var(--muted-on-navy); }
+  .card p a { color: var(--peach); font-weight: 700; }
+  .partner { display: flex; align-items: center; gap: 10px; margin-top: 16px; color: var(--cream); font-size: 14px; font-weight: 700; }
+  .partner:hover { color: var(--cream); }
+  .partner :global(img) { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
+  .partner small { font-weight: 400; color: var(--muted-on-navy); font-size: 14px; }
+  .pro { font-size: 15px; margin: 26px 0 0; color: var(--faint-on-navy); }
+  .pro a { color: var(--cream-2); }
+
+  .extract { border: none; border-radius: 16px; padding: 22px; width: min(520px, 94vw); max-width: none; max-height: 94vh; background: var(--cream); }
+  .extract::backdrop { background: rgba(14, 30, 50, 0.7); }
+  .extract :global(img) { width: 100%; border-radius: 4px; }
+  .close { position: sticky; top: 0; float: right; margin: -8px -8px 8px 8px; width: 44px; height: 44px; border-radius: 999px; border: none; background: var(--navy); color: var(--cream); cursor: pointer; display: grid; place-content: center; }
+
+  @media (max-width: 1024px) {
+    .hero-title { font-size: 66px; }
+    .cards .card:last-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 760px) {
+    .hero { padding-top: 44px; padding-bottom: 52px; }
+    .hero-grid { gap: 36px; }
+    .hero-title { font-size: 48px; }
+    .cover { width: 70%; margin: 0 auto; }
+    .order-grid .cover { order: 2; }
+    .h-52, .author-grid h2 { font-size: 38px !important; }
+    .quote { font-size: 24px; }
+    .portrait { width: 80%; }
+    .dist-head .cta { margin-left: 0; }
+    .cards .card:last-child { grid-column: auto; }
+  }
+</style>
