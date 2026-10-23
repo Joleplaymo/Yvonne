@@ -8,8 +8,8 @@ const str = (def) => envField.string({ context: 'server', access: 'secret', opti
 const num = (def) => envField.number({ context: 'server', access: 'secret', optional: true, default: def });
 
 // Domaines servis derrière le proxy (Caddy) : Astro ne fait confiance à X-Forwarded-Proto/Host que pour eux.
-// Fixés au build (argument Docker SITE_DOMAINS, séparés par des virgules).
-const domains = (process.env.SITE_DOMAINS || 'localhost')
+// Fixés au build (variable SITE_DOMAINS, séparés par des virgules). Par défaut : le domaine de prod + localhost.
+const domains = (process.env.SITE_DOMAINS || 'leshormonesdyvonne.vanessagandino.fr,localhost')
   .split(',')
   .map((d) => d.trim())
   .filter(Boolean);

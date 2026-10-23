@@ -11,7 +11,8 @@
     "build": "astro build",
     "start": "node ./dist/server/entry.mjs",
     "test": "vitest run",
-    "check": "astro check"
+    "check": "astro check",
+    "package:hostinger": "node scripts/package-hostinger.mjs"
   },
   "dependencies": {
     "@astrojs/node": "11.1.9",

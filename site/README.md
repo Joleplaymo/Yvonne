@@ -49,6 +49,36 @@ npm run check          # typage
 Sans `SMTP_URL`, les e-mails s'affichent dans le terminal au lieu d'être envoyés.
 Pour essayer la carte Mondial Relay : `MR_BRAND="BDTEST  "` (compte de démo, avec 2 espaces).
 
+## Mise en production sur l'hébergement Hostinger actuel (sans Docker)
+
+Il faut un plan qui accepte les **applications Node.js** (Business Web Hosting ou Cloud, à vérifier dans hPanel).
+Les plans d'entrée de gamme ne les acceptent pas : passer alors au plan supérieur ou à un VPS.
+
+1. **Sauvegarder le WordPress.** Dans hPanel → Sites → *le site* → Sauvegardes : créer une sauvegarde complète.
+   Puis WooCommerce → Commandes → exporter en CSV.
+2. **Construire le paquet** (sur ce PC) :
+   ```bash
+   cd site
+   npm run build
+   npm run package:hostinger   # → deploy/hostinger.zip
+   ```
+3. **Créer l'application.** hPanel → *Ajouter un site* → **Application Node.js** → *Téléverser des fichiers* → `deploy/hostinger.zip`.
+   - Version de Node : **22 ou 24** (minimum 22.13).
+   - Commande de démarrage : `npm run start`.
+   - Domaine : d'abord un sous-domaine de test (ex. `nouveau.vanessagandino.fr`) pour vérifier, puis `leshormonesdyvonne.vanessagandino.fr`.
+     Ce domaine est aujourd'hui attaché au WordPress : il faudra l'en détacher (ou supprimer ce site WP, une fois la sauvegarde faite).
+4. **Variables d'environnement** (dans les réglages de l'application) : reprendre celles de `.env.example`, et en plus :
+   - `DATA_DIR` = un dossier **hors du dossier de l'application** (chemin absolu visible dans le gestionnaire de fichiers, par ex. `/home/uXXXX/boutique-data`). Sans cela, un redéploiement effacerait les commandes.
+   - `PUBLIC_BASE_URL=https://leshormonesdyvonne.vanessagandino.fr`
+   - `SMTP_URL` avec la boîte mail Hostinger : `smtps://contact%40vanessagandino.fr:MOTDEPASSE@smtp.hostinger.com:465`
+     (`@` du login écrit `%40` ; caractères spéciaux du mot de passe à encoder de la même façon).
+   - `ADMIN_PASSWORD` : long et unique.
+   - Si le site est servi sur un autre domaine que `leshormonesdyvonne.vanessagandino.fr`, reconstruire avec `SITE_DOMAINS=ce-domaine` avant l'étape 2. Sinon les formulaires de l'admin sont refusés (protection anti-CSRF).
+5. **Vérifier** : page d'accueil, une commande test, `/admin`, réception des 2 e-mails.
+6. **Sauvegardes** : télécharger régulièrement `commandes.sqlite` depuis `DATA_DIR` (gestionnaire de fichiers). Les sauvegardes Hostinger couvrent aussi ce dossier.
+
+Mise à jour du site : refaire les étapes 2-3 (nouveau zip). Les commandes restent dans `DATA_DIR`.
+
 ## Mise en production (VPS avec Docker)
 
 1. Un VPS (Debian/Ubuntu, 1 Go de RAM suffit) avec Docker installé.

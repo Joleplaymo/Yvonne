@@ -5,3 +5,4 @@ data/
 .env
 .vitest/
 backups/
+deploy/
