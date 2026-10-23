@@ -2,8 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Steps from '../components/Steps.astro';
-import { Image } from 'astro:assets';
-import cover from '../assets/couverture.png';
+import Photo from '../components/Photo.astro';
 ---
 <Base title="Panier — Les hormones d'Yvonne" noindex>
   <section class="section">
@@ -22,7 +21,7 @@ import cover from '../assets/couverture.png';
 
     <div class="cart-grid" data-filled hidden>
       <div class="line">
-        <Image src={cover} alt="" width={120} height={180} class="thumb" />
+        <Photo slot="couverture" alt="" sizes="120px" class="thumb" />
         <div class="info">
           <h2>Les hormones d'Yvonne</h2>
           <p>Vanessa Gandino — livre broché</p>

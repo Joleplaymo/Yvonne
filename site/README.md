@@ -38,6 +38,10 @@ site/
 - Bloc **« Pour l'étiquette Mondial Relay »** → **Copier** → **Créer l'envoi** sur mondialrelay.fr.
 - N° de suivi → **Marquer expédiée** : le client reçoit un mail avec le suivi.
 - **Export CSV** (Excel FR).
+- **Photos** (`/admin/photos`) : remplacer la couverture, le portrait, l'extrait ou le logo partenaire en choisissant un fichier (JPEG, PNG, WebP, GIF, 15 Mo max).
+  L'image est redimensionnée, convertie et débarrassée de ses métadonnées automatiquement, puis visible sur le site en 5 minutes au plus.
+  « Rétablir l'originale » revient à la photo livrée avec le site.
+  Les photos personnalisées sont rangées dans `boutique-data/photos/` et survivent aux mises à jour du site.
 
 ## Mise en ligne sur Hostinger (offre actuelle)
 
@@ -49,7 +53,7 @@ site/
    Ce dossier est hors du site web : commandes (`commandes.sqlite`), configuration et journal (`journal.log`) n'y sont pas accessibles depuis Internet.
 5. **Vérifier** : accueil, `/panier`, une commande test, réception des 2 e-mails, `/admin`.
 
-Mise à jour du site : refaire 1 et 3. `boutique-data/` n'est jamais touché.
+Mise à jour du site : refaire 1, puis téléverser le zip dans `public_html` et l'extraire en écrasant les fichiers existants. `boutique-data/` (commandes, config, photos) n'est jamais touché.
 Sauvegarde : télécharger régulièrement `boutique-data/commandes.sqlite` (les sauvegardes Hostinger le couvrent aussi).
 
 ## Développement local

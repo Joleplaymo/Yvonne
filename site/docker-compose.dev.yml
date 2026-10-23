@@ -5,20 +5,16 @@ name: vanessagandino-dev
 
 services:
   php:
-    image: php:8.3-apache
-    command: >
-      sh -c "a2enmod rewrite headers expires >/dev/null
-      && sed -ri 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
-      && mkdir -p /data && chown www-data:www-data /data
-      && apache2-foreground"
+    build:
+      context: .
+      target: php-base
     ports:
       - "8080:80"
     env_file:
       - path: .env
         required: false
     environment:
-      DATA_DIR: /data
-      LOG_FILE: stderr
+      TRUST_PROXY: ""
       MAIL_MODE: smtp
       SMTP_HOST: mailpit
       SMTP_PORT: 1025

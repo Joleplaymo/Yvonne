@@ -12,7 +12,7 @@ export default defineConfig({
   vite: {
     server: {
       // En dev (`npm run dev`), les URL dynamiques sont relayées au conteneur PHP (`npm run php`).
-      proxy: Object.fromEntries(['/api', '/merci', '/admin'].map((p) => [p, phpBackend])),
+      proxy: Object.fromEntries(['/api', '/merci', '/admin', '/photo'].map((p) => [p, phpBackend])),
     },
   },
 });

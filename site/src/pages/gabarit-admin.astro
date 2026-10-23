@@ -30,6 +30,13 @@ import Admin from '../layouts/Admin.astro';
   .act > label { font-size: 14.5px; display: flex; gap: 6px; align-items: center; }
   .act .field { min-width: 240px; }
   .act.note { flex-direction: column; align-items: stretch; }
+  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; margin: 20px 0; }
+  .photo-card { display: flex; flex-direction: column; gap: 10px; }
+  .photo-card h2 { font-size: 20px; }
+  .photo-card .hint { margin: 0; font-size: 14px; }
+  .photo-preview { width: 100%; height: 220px; object-fit: contain; background: #fff; border-radius: 10px; }
+  .photo-form { display: flex; flex-direction: column; gap: 10px; }
+  .photo-form input[type=file] { font: inherit; font-size: 14px; }
   .login { max-width: 380px; margin: 40px auto; display: flex; flex-direction: column; gap: 16px; }
   @media (max-width: 760px) { .detail { grid-template-columns: 1fr; } }
 </style>

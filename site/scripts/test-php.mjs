@@ -1,8 +1,13 @@
-// Tests du backend PHP dans le même PHP que l'hébergement (8.3), via Docker.
+// Tests du backend PHP dans l'image PHP du projet (PHP 8.3 + GD, comme l'hébergement), via Docker.
 import { execFileSync } from 'node:child_process';
 
-execFileSync(
-  'docker',
-  ['run', '--rm', '-v', `${process.cwd()}:/app`, '-w', '/app', 'php:8.3-cli', 'php', 'tests/php/lib_test.php'],
-  { stdio: 'inherit', env: { ...process.env, MSYS_NO_PATHCONV: '1' } },
-);
+const run = (args) =>
+  execFileSync('docker', args, { stdio: 'inherit', env: { ...process.env, MSYS_NO_PATHCONV: '1' } });
+
+run(['compose', '-f', 'docker-compose.dev.yml', 'build', '-q', 'php']);
+for (const test of ['tests/php/lib_test.php', 'tests/php/photos_test.php']) {
+  run([
+    'compose', '-f', 'docker-compose.dev.yml', 'run', '--rm', '--no-deps',
+    '-v', `${process.cwd()}:/app`, '-w', '/app', '--entrypoint', 'php', 'php', test,
+  ]);
+}
