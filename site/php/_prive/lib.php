@@ -94,14 +94,59 @@ function parse_shipping_table(string $raw): array
     return $tiers;
 }
 
-function pricing(): array
+/** Paliers en vigueur : réglage de l'admin (/admin/livraison) s'il existe, sinon la configuration. */
+function shipping_table_source(?PDO $db = null): string
+{
+    return get_setting($db ?? db(), 'shipping_table') ?? cfg()['shipping_table'];
+}
+
+function pricing(?PDO $db = null): array
 {
     $c = cfg();
     return [
         'unitCents' => (int) round($c['book_price_eur'] * 100),
         'maxQty' => $c['max_qty'],
-        'shipping' => parse_shipping_table($c['shipping_table']),
+        'shipping' => parse_shipping_table(shipping_table_source($db)),
     ];
+}
+
+/** Paliers -> "1:4.90,2:5.90" (format stocké). */
+function shipping_table_string(array $tiers): string
+{
+    return implode(',', array_map(fn($t) => $t['minQty'] . ':' . number_format($t['cents'] / 100, 2, '.', ''), $tiers));
+}
+
+/**
+ * Lit les lignes du formulaire de livraison (« à partir de N livres » / « prix »).
+ * Les lignes entièrement vides sont ignorées ; le prix accepte la virgule.
+ * @return array{ok: bool, tiers?: array, error?: string}
+ */
+function shipping_from_form(array $minQtys, array $prices, int $maxQty): array
+{
+    $tiers = [];
+    $seen = [];
+    foreach (array_values($minQtys) as $i => $rawQty) {
+        $rawPrice = $prices[$i] ?? '';
+        $q = is_scalar($rawQty) ? trim((string) $rawQty) : '';
+        $p = str_replace([',', '€', ' ', "\u{00A0}"], ['.', '', '', ''], is_scalar($rawPrice) ? trim((string) $rawPrice) : '');
+        if ($q === '' && $p === '') continue;
+        if (!ctype_digit($q) || (int) $q < 1 || (int) $q > $maxQty) {
+            return ['ok' => false, 'error' => "Ligne " . ($i + 1) . " : le nombre de livres doit être entre 1 et $maxQty."];
+        }
+        if (!is_numeric($p) || (float) $p < 0 || (float) $p >= 100) {
+            return ['ok' => false, 'error' => "Ligne " . ($i + 1) . " : prix invalide (ex. 4,90)."];
+        }
+        if (isset($seen[(int) $q])) {
+            return ['ok' => false, 'error' => "Le palier « à partir de $q livre(s) » apparaît deux fois."];
+        }
+        $seen[(int) $q] = true;
+        $tiers[] = ['minQty' => (int) $q, 'cents' => (int) round((float) $p * 100)];
+    }
+    usort($tiers, fn($a, $b) => $a['minQty'] <=> $b['minQty']);
+    if (!$tiers || $tiers[0]['minQty'] !== 1) {
+        return ['ok' => false, 'error' => 'Il faut un palier « à partir de 1 livre ».'];
+    }
+    return ['ok' => true, 'tiers' => $tiers];
 }
 
 function compute_totals(int $qty, array $p): array
@@ -202,6 +247,7 @@ function db(?string $file = null): PDO
           paid_at TEXT, shipped_at TEXT
         );
         CREATE INDEX IF NOT EXISTS orders_status ON orders(status);
+        CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS hits (key TEXT NOT NULL, at INTEGER NOT NULL);
         CREATE INDEX IF NOT EXISTS hits_key ON hits(key, at);
         SQL);
@@ -281,6 +327,36 @@ function set_status(PDO $db, string $ref, string $status, string $tracking = '')
 function set_admin_note(PDO $db, string $ref, string $note): void
 {
     $db->prepare('UPDATE orders SET admin_note = ? WHERE ref = ?')->execute([mb_substr($note, 0, 2000), $ref]);
+}
+
+// ---------------------------------------------------------------- Réglages modifiables depuis l'admin
+
+function get_setting(PDO $db, string $key): ?string
+{
+    $st = $db->prepare('SELECT value FROM settings WHERE key = ?');
+    $st->execute([$key]);
+    $v = $st->fetchColumn();
+    return $v === false ? null : (string) $v;
+}
+
+function set_setting(PDO $db, string $key, string $value): void
+{
+    $db->prepare('INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at')
+        ->execute([$key, $value, now_iso()]);
+}
+
+function delete_setting(PDO $db, string $key): void
+{
+    $db->prepare('DELETE FROM settings WHERE key = ?')->execute([$key]);
+}
+
+function setting_updated_at(PDO $db, string $key): ?string
+{
+    $st = $db->prepare('SELECT updated_at FROM settings WHERE key = ?');
+    $st->execute([$key]);
+    $v = $st->fetchColumn();
+    return $v === false ? null : (string) $v;
 }
 
 /** Limite par clé : vrai si plus de $max événements dans la fenêtre. */

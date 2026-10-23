@@ -38,6 +38,7 @@ site/
 - Bloc **« Pour l'étiquette Mondial Relay »** → **Copier** → **Créer l'envoi** sur mondialrelay.fr.
 - N° de suivi → **Marquer expédiée** : le client reçoit un mail avec le suivi.
 - **Export CSV** (Excel FR).
+- **Livraison** (`/admin/livraison`) : frais de port par paliers (« à partir de N livres → prix »), aperçu de ce que paie le client pour 1 à 6 livres. Les nouveaux frais s'appliquent immédiatement aux nouvelles commandes ; ils priment sur `shipping_table` de `config.php` (bouton pour y revenir).
 - **Photos** (`/admin/photos`) : remplacer la couverture, le portrait, l'extrait ou le logo partenaire en choisissant un fichier (JPEG, PNG, WebP, GIF, 15 Mo max).
   L'image est redimensionnée, convertie et débarrassée de ses métadonnées automatiquement, puis visible sur le site en 5 minutes au plus.
   « Rétablir l'originale » revient à la photo livrée avec le site.
@@ -86,6 +87,6 @@ Les tests tournent pendant le build. Sauvegarde : `./scripts/backup.sh` (cron co
 
 ## Avant d'ouvrir la boutique
 
-- [ ] Frais de port réels (`shipping_table`).
+- [ ] Frais de port réels (page `/admin/livraison`).
 - [ ] CGV, mentions légales, politique de confidentialité (obligatoires pour la vente en ligne).
 - [ ] Commande test de bout en bout avec un vrai paiement Revolut de faible montant.

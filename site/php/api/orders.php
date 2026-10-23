@@ -23,7 +23,7 @@ try {
     // Pot de miel anti-robots : un humain ne voit pas ce champ.
     if (trim((string) ($body['website'] ?? '')) !== '') json_out(400, ['message' => 'Requête invalide.']);
 
-    $pricing = pricing();
+    $pricing = pricing($db);
     $r = validate_order($body, $pricing['maxQty']);
     if (!$r['ok']) json_out(422, ['errors' => $r['errors']]);
 

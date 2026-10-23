@@ -71,6 +71,27 @@ check('filtre statut', array_column(list_orders($db, 'expediee'), 'ref') === ['Y
 $limited = false;
 for ($i = 0; $i < 4; $i++) $limited = rate_limited($db, 'k', 3, 60);
 check('limite de débit', $limited && !rate_limited($db, 'autre', 3, 60));
+// --- Frais de port modifiables depuis l'admin
+$f = shipping_from_form(['1', '3', '', '6'], ['4,90', '6.5', '', '0'], 6);
+check('formulaire port : virgule, ligne vide ignorée, tri', $f['ok'] && $f['tiers'] === [
+    ['minQty' => 1, 'cents' => 490], ['minQty' => 3, 'cents' => 650], ['minQty' => 6, 'cents' => 0]]);
+check('formulaire port : format stocké', shipping_table_string($f['tiers']) === '1:4.90,3:6.50,6:0.00');
+check('formulaire port : palier 1 obligatoire', !shipping_from_form(['2'], ['5'], 6)['ok']);
+check('formulaire port : doublon refusé', !shipping_from_form(['1', '1'], ['5', '6'], 6)['ok']);
+check('formulaire port : quantité > max refusée', !shipping_from_form(['1', '9'], ['5', '6'], 6)['ok']);
+check('formulaire port : prix invalide refusé', !shipping_from_form(['1'], ['abc'], 6)['ok']);
+check('formulaire port : prix négatif refusé', !shipping_from_form(['1'], ['-1'], 6)['ok']);
+check('formulaire port : tableau injecté ignoré', !shipping_from_form([['x']], [['y']], 6)['ok']);
+check('formulaire port : symbole € accepté', shipping_from_form(['1'], ['4,90 €'], 6)['ok']);
+
+check('pas de réglage → config', get_setting($db, 'shipping_table') === null && shipping_table_source($db) === cfg()['shipping_table']);
+set_setting($db, 'shipping_table', '1:3.00,2:8.00');
+set_setting($db, 'shipping_table', '1:3.50,2:8.00'); // mise à jour (upsert)
+check('réglage prioritaire sur la config', pricing($db)['shipping'] === [['minQty' => 1, 'cents' => 350], ['minQty' => 2, 'cents' => 800]]);
+check('date de modification', setting_updated_at($db, 'shipping_table') !== null);
+delete_setting($db, 'shipping_table');
+check('suppression → retour config', shipping_table_source($db) === cfg()['shipping_table']);
+
 check('échappement HTML', h('<a href="x">&') === '&lt;a href=&quot;x&quot;&gt;&amp;');
 
 echo $fails ? "\n$fails/$count test(s) en échec\n" : "$count tests PHP OK\n";

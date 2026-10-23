@@ -42,6 +42,7 @@ RewriteRule ^admin/?$ admin/index.php [L,QSA]
 RewriteRule ^admin/export\.csv$ admin/export.php [L]
 RewriteRule ^admin/deconnexion$ admin/deconnexion.php [L]
 RewriteRule ^admin/photos$ admin/photos.php [L]
+RewriteRule ^admin/livraison$ admin/livraison.php [L]
 RewriteRule ^photo/([a-z]+)$ photo.php?slot=$1 [L,QSA]
 RewriteRule ^admin/(YV-[0-9]+)$ admin/commande.php?ref=$1 [L,QSA]
 
