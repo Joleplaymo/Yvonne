@@ -34,7 +34,7 @@ function mail_headers(array $c): array
 {
     return [
         'From: ' . mime_header($c['mail_from_name']) . ' <' . $c['mail_from'] . '>',
-        'Reply-To: ' . $c['admin_email'],
+        'Reply-To: ' . ($c['admin_email'] !== '' ? $c['admin_email'] : $c['mail_from']),
         'MIME-Version: 1.0',
         'Content-Type: text/plain; charset=UTF-8',
         'Content-Transfer-Encoding: base64',
