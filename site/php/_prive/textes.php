@@ -64,6 +64,6 @@ function text_apply(string $html, array $overrides): string
 {
     if (!$overrides) return $html;
     return preg_replace_callback('/<!--t:([a-z0-9_]+)-->(.*?)<!--\/t:\1-->/s', function (array $m) use ($overrides): string {
-        return isset($overrides[$m[1]]) ? text_render($overrides[$m[1]]) : $m[2];
+        return isset($overrides[$m[1]]) ? text_render($overrides[$m[1]]) : $m[0];
     }, $html);
 }
