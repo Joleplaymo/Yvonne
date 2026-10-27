@@ -3,6 +3,7 @@ export const prerender = true;
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Photo from '../components/Photo.astro';
+import T from '../components/T.astro';
 
 const buy = '/panier?ajouter=1';
 ---
@@ -11,11 +12,11 @@ const buy = '/panier?ajouter=1';
   <section class="hero on-navy">
     <div class="grid-2 hero-grid">
       <div>
-        <h1 class="bigword hero-title">les<br />hormones<br />d'Yvonne</h1>
-        <p class="lead"><b>LE</b> livre qui met enfin les vrais mots (et de l'humour) sur ce que les hormones nous font vivre</p>
+        <h1 class="bigword hero-title"><T k="hero_titre" /></h1>
+        <p class="lead"><T k="hero_accroche" /></p>
         <div class="cta-row" style="margin-top:34px;">
-          <a class="cta" href={buy}>Je le veux !!!!</a>
-          <button type="button" class="cta outline" data-open-extract>Lire un extrait</button>
+          <a class="cta" href={buy}><T k="bouton_principal" /></a>
+          <button type="button" class="cta outline" data-open-extract><T k="bouton_extrait" /></button>
         </div>
       </div>
       <figure class="cover shadow-dark">
@@ -26,19 +27,19 @@ const buy = '/panier?ajouter=1';
 
   <!-- LE LIVRE -->
   <section id="livre" class="section book">
-    <h2 class="h-52">Une vie entière<br />à négocier avec<br />nos hormones !</h2>
+    <h2 class="h-52"><T k="livre_titre" /></h2>
     <div class="grid-3 pillars">
-      <div><span>À en rire parfois</span><p>De la puberté à la ménopause, sans jamais de pause. Un corps qui change sans demander votre avis.</p></div>
-      <div><span>À en pleurer souvent</span><p>Les silences, les injonctions, les combats invisibles — et ce fameux « c'est hormonal ».</p></div>
-      <div><span>À en parler enfin</span><p>Raconter tout haut ce que des millions de femmes vivent tout bas. Un hommage à la force féminine.</p></div>
+      <div><span><T k="pilier1_titre" /></span><p><T k="pilier1_texte" /></p></div>
+      <div><span><T k="pilier2_titre" /></span><p><T k="pilier2_texte" /></p></div>
+      <div><span><T k="pilier3_titre" /></span><p><T k="pilier3_texte" /></p></div>
     </div>
   </section>
 
   <!-- CITATION -->
   <section class="section on-navy">
-    <h2 class="bigword hashtag">#balancetes<br />hormones</h2>
-    <blockquote class="quote">« si les hormones étaient un patron, il y aurait déjà eu une plainte collective mondiale pour harcèlement physique et moral. »</blockquote>
-    <div style="display:flex; justify-content:flex-end; margin-top:32px;"><a class="cta" href={buy}>Commander le livre</a></div>
+    <h2 class="bigword hashtag"><T k="hashtag" /></h2>
+    <blockquote class="quote"><T k="citation" /></blockquote>
+    <div style="display:flex; justify-content:flex-end; margin-top:32px;"><a class="cta" href={buy}><T k="citation_bouton" /></a></div>
   </section>
 
   <!-- COMMANDER -->
@@ -48,13 +49,13 @@ const buy = '/panier?ajouter=1';
         <Photo slot="couverture" alt="Couverture du livre Les hormones d'Yvonne" sizes="(max-width: 760px) 70vw, 320px" />
       </figure>
       <div>
-        <h2 style="font-size:38px;">Il est pour vous.<br />Il est à vous.</h2>
-        <p class="with-box"><span class="box"><Icon name="package" size={23} /></span>expédié avec soin en point relais Mondial Relay</p>
+        <h2 style="font-size:38px;"><T k="commander_titre" /></h2>
+        <p class="with-box"><span class="box"><Icon name="package" size={23} /></span><T k="commander_livraison" /></p>
         <div class="cta-row" style="margin-top:26px;">
-          <a class="cta" href={buy}>Je commande le livre</a>
-          <a class="cta outline" href="#distribution">Où le trouver près de chez moi</a>
+          <a class="cta" href={buy}><T k="commander_bouton" /></a>
+          <a class="cta outline" href="#distribution"><T k="commander_bouton_ou" /></a>
         </div>
-        <p class="fast"><Icon name="truck" size={22} /> Expédition rapide</p>
+        <p class="fast"><Icon name="truck" size={22} /> <T k="commander_rapide" /></p>
       </div>
     </div>
   </section>
@@ -66,10 +67,10 @@ const buy = '/panier?ajouter=1';
         <Photo slot="portrait" alt="Portrait de Vanessa Gandino" sizes="(max-width: 760px) 90vw, 360px" />
       </figure>
       <div>
-        <h2 class="bigword" style="font-size:52px;">Vanessa<br />Gandino</h2>
-        <p style="font-size:18px; line-height:1.5; margin:24px 0 0;">J'ai la cinquantaine et un certain vécu hormonal !<br />J'écris comme je ressens. Naturellement. Sincèrement.</p>
-        <p class="author-quote">« Dans les hormones d'Yvonne, j'ai essayé de raconter tout haut ce que des millions de femmes vivent tout bas. J'ai pensé ce livre comme un hommage à la force féminine. »</p>
-        <p style="font-size:17px; margin:22px 0 0; color:var(--peach);">Hormonalement votre</p>
+        <h2 class="bigword" style="font-size:52px;"><T k="autrice_nom" /></h2>
+        <p style="font-size:18px; line-height:1.5; margin:24px 0 0;"><T k="autrice_intro" /></p>
+        <p class="author-quote"><T k="autrice_citation" /></p>
+        <p style="font-size:17px; margin:22px 0 0; color:var(--peach);"><T k="autrice_signature" /></p>
       </div>
     </div>
   </section>
@@ -78,38 +79,38 @@ const buy = '/panier?ajouter=1';
   <section id="distribution" class="section on-navy distribution">
     <div class="dist-head">
       <div>
-        <h2 style="font-size:40px;">Où trouver les hormones d'Yvonne</h2>
-        <p>Librairies indépendantes, concept stores et boutiques partenaires</p>
+        <h2 style="font-size:40px;"><T k="dist_titre" /></h2>
+        <p><T k="dist_intro" /></p>
       </div>
     </div>
     <div class="grid-3 cards">
       <div class="card">
         <span class="ic"><Icon name="globe" /></span>
-        <span class="card-title">En ligne</span>
-        <p>directement auprès de l'autrice — <a href="/panier?ajouter=1">commander ici</a></p>
+        <span class="card-title"><T k="dist_ligne_titre" /></span>
+        <p><T k="dist_ligne_texte" /> <a href="/panier?ajouter=1"><T k="dist_ligne_lien" /></a></p>
       </div>
       <div class="card">
         <span class="ic"><Icon name="store" /></span>
-        <span class="card-title">Concept stores</span>
-        <p>Lieux de vie, boutiques bien-être et adresses partenaires.</p>
+        <span class="card-title"><T k="dist_concept_titre" /></span>
+        <p><T k="dist_concept_texte" /></p>
         <a class="partner" href="https://www.instagram.com/legardemanger_" target="_blank" rel="noopener">
           <Photo slot="partenaire" alt="" sizes="44px" />
-          <span>Le Garde-Manger<br /><small>voir sur Instagram</small></span>
+          <span><T k="dist_partenaire_nom" /><br /><small><T k="dist_partenaire_lien" /></small></span>
         </a>
       </div>
       <div class="card">
         <span class="ic"><Icon name="book-open" /></span>
-        <span class="card-title">Librairies indépendantes</span>
-        <p>les plus jolies libraires qui ont ouvert leurs portes à Yvonne</p>
+        <span class="card-title"><T k="dist_librairies_titre" /></span>
+        <p><T k="dist_librairies_texte" /></p>
       </div>
     </div>
-    <p class="pro">Vous êtes libraire ou commerçant et souhaitez référencer le livre ? Écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a></p>
+    <p class="pro"><T k="dist_pro" /> <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a></p>
   </section>
 
   <dialog class="extract" aria-label="Extrait : quatrième de couverture">
     <form method="dialog"><button class="close" aria-label="Fermer"><Icon name="x" /></button></form>
     <Photo slot="extrait" alt="Quatrième de couverture : « Pour raconter une vie entière sous influence hormonale, il fallait une voix. Une voix de femme. Yvonne. »" sizes="(max-width: 760px) 92vw, 480px" />
-    <a class="cta" href={buy} style="margin-top:18px; width:100%;">Je le veux !!!!</a>
+    <a class="cta" href={buy} style="margin-top:18px; width:100%;"><T k="bouton_principal" /></a>
   </dialog>
 </Base>
 

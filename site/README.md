@@ -44,6 +44,10 @@ site/
   « Rétablir l'originale » revient à la photo livrée avec le site.
   Les photos personnalisées sont rangées dans `boutique-data/photos/` et survivent aux mises à jour du site.
 
+- **Textes** (`/admin/textes`) : modifier les textes de l'accueil (titres, phrases, boutons, citations). Retour à la ligne avec Entrée, `**mot**` pour le gras. « Rétablir l'original » revient au texte livré avec le site.
+  Les textes modifiés sont rangés dans la base (`commandes.sqlite`, table `settings`, clés `texte:…`). L'accueil est alors servi par `php/index.php`, qui remplace les textes repérés dans `_prive/accueil.html`.
+  Pour rendre un nouveau texte modifiable : le déclarer dans `src/content/textes.json` et l'afficher avec `<T k="clé" />`.
+
 ## Mise en ligne sur Hostinger (offre actuelle)
 
 1. **Paquet** (sur ce PC) : `cd site && npm install && npm run package:hostinger` → `deploy/hostinger.zip`.

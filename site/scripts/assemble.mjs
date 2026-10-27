@@ -15,6 +15,9 @@ rmSync('build', { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync('dist', out, { recursive: true });
 cpSync('php', out, { recursive: true });
+// L'accueil est servi par php/index.php (textes modifiables) ; le catalogue des textes accompagne le code PHP.
+renameSync(`${out}/index.html`, `${out}/_prive/accueil.html`);
+cpSync('src/content/textes.json', `${out}/_prive/textes.json`);
 for (const t of ['gabarit', 'gabarit-admin']) renameSync(`${out}/${t}.html`, `${out}/_prive/${t}.html`);
 
 // Photos d'origine (remplaçables ensuite depuis /admin/photos), mêmes largeurs que php/_prive/photos.php.

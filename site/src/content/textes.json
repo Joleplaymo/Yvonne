@@ -1,0 +1,69 @@
+{
+  "groups": [
+    {
+      "title": "Haut de page",
+      "items": [
+        { "key": "hero_titre", "label": "Grand titre", "rows": 3, "default": "les\nhormones\nd'Yvonne" },
+        { "key": "hero_accroche", "label": "Phrase d'accroche", "rows": 3, "default": "**LE** livre qui met enfin les vrais mots (et de l'humour) sur ce que les hormones nous font vivre" },
+        { "key": "bouton_principal", "label": "Bouton principal (haut de page et fenêtre de l'extrait)", "rows": 1, "default": "Je le veux !!!!" },
+        { "key": "bouton_extrait", "label": "Bouton « extrait »", "rows": 1, "default": "Lire un extrait" }
+      ]
+    },
+    {
+      "title": "Le livre",
+      "items": [
+        { "key": "livre_titre", "label": "Titre de la section", "rows": 3, "default": "Une vie entière\nà négocier avec\nnos hormones !" },
+        { "key": "pilier1_titre", "label": "Colonne 1 : titre", "rows": 1, "default": "À en rire parfois" },
+        { "key": "pilier1_texte", "label": "Colonne 1 : texte", "rows": 4, "default": "De la puberté à la ménopause, sans jamais de pause. Un corps qui change sans demander votre avis." },
+        { "key": "pilier2_titre", "label": "Colonne 2 : titre", "rows": 1, "default": "À en pleurer souvent" },
+        { "key": "pilier2_texte", "label": "Colonne 2 : texte", "rows": 4, "default": "Les silences, les injonctions, les combats invisibles — et ce fameux « c'est hormonal »." },
+        { "key": "pilier3_titre", "label": "Colonne 3 : titre", "rows": 1, "default": "À en parler enfin" },
+        { "key": "pilier3_texte", "label": "Colonne 3 : texte", "rows": 4, "default": "Raconter tout haut ce que des millions de femmes vivent tout bas. Un hommage à la force féminine." }
+      ]
+    },
+    {
+      "title": "Citation",
+      "items": [
+        { "key": "hashtag", "label": "Mot-dièse", "rows": 2, "default": "#balancetes\nhormones" },
+        { "key": "citation", "label": "Citation", "rows": 4, "default": "« si les hormones étaient un patron, il y aurait déjà eu une plainte collective mondiale pour harcèlement physique et moral. »" },
+        { "key": "citation_bouton", "label": "Bouton sous la citation", "rows": 1, "default": "Commander le livre" }
+      ]
+    },
+    {
+      "title": "Commander",
+      "items": [
+        { "key": "commander_titre", "label": "Titre", "rows": 2, "default": "Il est pour vous.\nIl est à vous." },
+        { "key": "commander_livraison", "label": "Phrase sur la livraison", "rows": 2, "default": "expédié avec soin en point relais Mondial Relay" },
+        { "key": "commander_bouton", "label": "Bouton « commander »", "rows": 1, "default": "Je commande le livre" },
+        { "key": "commander_bouton_ou", "label": "Bouton « où le trouver »", "rows": 1, "default": "Où le trouver près de chez moi" },
+        { "key": "commander_rapide", "label": "Mention d'expédition", "rows": 1, "default": "Expédition rapide" }
+      ]
+    },
+    {
+      "title": "L'autrice",
+      "items": [
+        { "key": "autrice_nom", "label": "Nom", "rows": 2, "default": "Vanessa\nGandino" },
+        { "key": "autrice_intro", "label": "Présentation", "rows": 3, "default": "J'ai la cinquantaine et un certain vécu hormonal !\nJ'écris comme je ressens. Naturellement. Sincèrement." },
+        { "key": "autrice_citation", "label": "Citation de l'autrice", "rows": 4, "default": "« Dans les hormones d'Yvonne, j'ai essayé de raconter tout haut ce que des millions de femmes vivent tout bas. J'ai pensé ce livre comme un hommage à la force féminine. »" },
+        { "key": "autrice_signature", "label": "Signature", "rows": 1, "default": "Hormonalement votre" }
+      ]
+    },
+    {
+      "title": "Où le trouver",
+      "items": [
+        { "key": "dist_titre", "label": "Titre", "rows": 2, "default": "Où trouver les hormones d'Yvonne" },
+        { "key": "dist_intro", "label": "Sous-titre", "rows": 2, "default": "Librairies indépendantes, concept stores et boutiques partenaires" },
+        { "key": "dist_ligne_titre", "label": "Carte « en ligne » : titre", "rows": 1, "default": "En ligne" },
+        { "key": "dist_ligne_texte", "label": "Carte « en ligne » : texte avant le lien", "rows": 2, "default": "directement auprès de l'autrice —" },
+        { "key": "dist_ligne_lien", "label": "Carte « en ligne » : texte du lien", "rows": 1, "default": "commander ici" },
+        { "key": "dist_concept_titre", "label": "Carte « concept stores » : titre", "rows": 1, "default": "Concept stores" },
+        { "key": "dist_concept_texte", "label": "Carte « concept stores » : texte", "rows": 3, "default": "Lieux de vie, boutiques bien-être et adresses partenaires." },
+        { "key": "dist_partenaire_nom", "label": "Partenaire : nom", "rows": 1, "default": "Le Garde-Manger" },
+        { "key": "dist_partenaire_lien", "label": "Partenaire : mention sous le nom", "rows": 1, "default": "voir sur Instagram" },
+        { "key": "dist_librairies_titre", "label": "Carte « librairies » : titre", "rows": 1, "default": "Librairies indépendantes" },
+        { "key": "dist_librairies_texte", "label": "Carte « librairies » : texte", "rows": 3, "default": "les plus jolies libraires qui ont ouvert leurs portes à Yvonne" },
+        { "key": "dist_pro", "label": "Phrase pour les libraires (avant l'adresse e-mail)", "rows": 3, "default": "Vous êtes libraire ou commerçant et souhaitez référencer le livre ? Écrivez à" }
+      ]
+    }
+  ]
+}
