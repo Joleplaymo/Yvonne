@@ -9,6 +9,7 @@ const buy = '/panier?ajouter=1';
 ---
 <Base title="Les hormones d'Yvonne — Vanessa Gandino">
   <!-- HERO -->
+  <Fragment set:html="<!--sec:hero-->" />
   <section class="hero on-navy">
     <div class="grid-2 hero-grid">
       <div>
@@ -24,8 +25,10 @@ const buy = '/panier?ajouter=1';
       </figure>
     </div>
   </section>
+  <Fragment set:html="<!--/sec:hero-->" />
 
   <!-- LE LIVRE -->
+  <Fragment set:html="<!--sec:livre-->" />
   <section id="livre" class="section book">
     <h2 class="h-52"><T k="livre_titre" /></h2>
     <div class="grid-3 pillars">
@@ -34,15 +37,19 @@ const buy = '/panier?ajouter=1';
       <div><span><T k="pilier3_titre" /></span><p><T k="pilier3_texte" /></p></div>
     </div>
   </section>
+  <Fragment set:html="<!--/sec:livre-->" />
 
   <!-- CITATION -->
+  <Fragment set:html="<!--sec:citation-->" />
   <section class="section on-navy">
     <h2 class="bigword hashtag"><T k="hashtag" /></h2>
     <blockquote class="quote"><T k="citation" /></blockquote>
     <div style="display:flex; justify-content:flex-end; margin-top:32px;"><a class="cta" href={buy}><T k="citation_bouton" /></a></div>
   </section>
+  <Fragment set:html="<!--/sec:citation-->" />
 
   <!-- COMMANDER -->
+  <Fragment set:html="<!--sec:commander-->" />
   <section id="commander" class="section">
     <div class="grid-2 order-grid">
       <figure class="cover shadow-light">
@@ -59,8 +66,10 @@ const buy = '/panier?ajouter=1';
       </div>
     </div>
   </section>
+  <Fragment set:html="<!--/sec:commander-->" />
 
   <!-- AUTRICE -->
+  <Fragment set:html="<!--sec:autrice-->" />
   <section id="autrice" class="section on-navy">
     <div class="grid-2 author-grid">
       <figure class="portrait">
@@ -74,8 +83,10 @@ const buy = '/panier?ajouter=1';
       </div>
     </div>
   </section>
+  <Fragment set:html="<!--/sec:autrice-->" />
 
   <!-- OÙ LE TROUVER -->
+  <Fragment set:html="<!--sec:distribution-->" />
   <section id="distribution" class="section on-navy distribution">
     <div class="dist-head">
       <div>
@@ -106,6 +117,7 @@ const buy = '/panier?ajouter=1';
     </div>
     <p class="pro"><T k="dist_pro" /> <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a></p>
   </section>
+  <Fragment set:html="<!--/sec:distribution-->" />
 
   <dialog class="extract" aria-label="Extrait : quatrième de couverture">
     <form method="dialog"><button class="close" aria-label="Fermer"><Icon name="x" /></button></form>

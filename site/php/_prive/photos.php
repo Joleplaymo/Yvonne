@@ -15,6 +15,19 @@ const PHOTO_WIDTHS = [480, 960];
 const PHOTO_MAX_BYTES = 15 * 1024 * 1024;
 const PHOTO_MAX_PIXELS = 40_000_000;
 
+/** Emplacements fixes (PHOTO_SLOTS) et photos des blocs libres de l'accueil (img-b… : voir accueil.php). */
+function photo_slot_valid(string $slot): bool
+{
+    return isset(PHOTO_SLOTS[$slot]) || (bool) preg_match('/^img-b[0-9a-f]{6}$/', $slot);
+}
+
+/** Date de la photo personnalisée (pour renouveler l'adresse quand elle change), 0 sinon. */
+function photo_version(string $slot): int
+{
+    $f = photo_file($slot, PHOTO_WIDTHS[0]);
+    return $f !== null ? (int) filemtime($f) : 0;
+}
+
 function photo_dir(): string
 {
     return cfg()['data_dir'] . '/photos';
@@ -23,7 +36,7 @@ function photo_dir(): string
 /** Fichier à servir pour un emplacement et une largeur : personnalisé s'il existe, sinon l'original. */
 function photo_file(string $slot, int $width): ?string
 {
-    if (!isset(PHOTO_SLOTS[$slot])) return null;
+    if (!photo_slot_valid($slot)) return null;
     $w = in_array($width, PHOTO_WIDTHS, true) ? $width : PHOTO_WIDTHS[0];
     foreach (['webp', 'jpg'] as $ext) {
         $f = photo_dir() . "/$slot-$w.$ext";
@@ -49,7 +62,7 @@ function photo_reset(string $slot): void
  */
 function photo_save(string $slot, array $upload): ?string
 {
-    if (!isset(PHOTO_SLOTS[$slot])) return 'Emplacement inconnu.';
+    if (!photo_slot_valid($slot)) return 'Emplacement inconnu.';
     if (!function_exists('imagecreatetruecolor')) return "Le module GD de PHP n'est pas disponible sur cet hébergement.";
     if (($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
         return match ($upload['error'] ?? 0) {

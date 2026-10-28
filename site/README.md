@@ -51,6 +51,9 @@ site/
 - **Couleurs** (`/admin/couleurs`) : changer la palette de l'accueil, du panier, de la commande et des pages de paiement (6 couleurs, aperçu en direct, alerte si le contraste est faible). Les nuances proches (survol, fonds, textes atténués) se calculent seules. L'admin garde ses couleurs.
   Les couleurs modifiées sont rangées dans `settings` (clés `couleur:…`) et ajoutées aux pages sous forme de variables CSS. Accueil, panier et commande sont donc servis par PHP (`index.php`, `page.php`).
 
+- **Accueil** (`/admin/accueil`) : mise en page complète de la page d'accueil. Chaque section se déplace (flèches), se masque, change de fond, de couleur de texte et d'espacement.
+  On peut aussi ajouter ses propres sections : texte, photo, image + texte, colonnes, citation (photos téléversées comme dans « photos »). Les 6 sections d'origine sont repérées dans `index.astro` par `<!--sec:id-->` ; `php/index.php` les réordonne selon la liste enregistrée (`settings`, clé `accueil_mise_en_page`, JSON). Sans personnalisation, la page d'origine s'affiche telle quelle.
+
 ## Mise en ligne sur Hostinger (offre actuelle)
 
 1. **Paquet** (sur ce PC) : `cd site && npm install && npm run package:hostinger` → `deploy/hostinger.zip`.

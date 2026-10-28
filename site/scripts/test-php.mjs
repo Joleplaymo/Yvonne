@@ -5,7 +5,7 @@ const run = (args) =>
   execFileSync('docker', args, { stdio: 'inherit', env: { ...process.env, MSYS_NO_PATHCONV: '1' } });
 
 run(['compose', '-f', 'docker-compose.dev.yml', 'build', '-q', 'php']);
-for (const test of ['tests/php/lib_test.php', 'tests/php/photos_test.php', 'tests/php/textes_test.php', 'tests/php/couleurs_test.php']) {
+for (const test of ['tests/php/lib_test.php', 'tests/php/photos_test.php', 'tests/php/textes_test.php', 'tests/php/couleurs_test.php', 'tests/php/accueil_test.php']) {
   run([
     'compose', '-f', 'docker-compose.dev.yml', 'run', '--rm', '--no-deps',
     '-v', `${process.cwd()}:/app`, '-w', '/app', '--entrypoint', 'php', 'php', test,
