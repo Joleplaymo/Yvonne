@@ -5,6 +5,7 @@ require __DIR__ . '/_prive/textes.php';
 require __DIR__ . '/_prive/couleurs.php';
 require __DIR__ . '/_prive/accueil.php';
 require __DIR__ . '/_prive/entete.php';
+require __DIR__ . '/_prive/seo.php';
 
 // Accueil : page générée au build (_prive/accueil.html) avec les textes, la mise en page, l'en-tête, le pied de page et les couleurs choisis dans l'admin.
 $html = (string) file_get_contents(__DIR__ . '/_prive/accueil.html');
@@ -12,6 +13,7 @@ try {
     $db = db();
     $texts = text_overrides($db);
     $html = text_apply($html, $texts);
+    $html = seo_apply($html, $db);
     $layout = home_layout($db, $texts);
 } catch (Throwable $e) {
     // Base illisible : mieux vaut afficher la page d'origine que casser la page d'accueil.

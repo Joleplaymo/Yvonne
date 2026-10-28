@@ -59,6 +59,8 @@ site/
   `Base.astro` repère les deux par `<!--chrome:header-->` / `<!--chrome:footer-->` ; sans configuration enregistrée (`settings`, clés `site_entete` et `site_pied`), le gabarit d'origine reste en place.
 - Dans l'éditeur d'accueil, chaque section, ligne, colonne et élément se replie / se déplie (boutons « Tout déplier », « Tout replier », « Sections ouvertes, détails repliés » ; l'état est retenu pendant la session).
 
+- **Référencement** (`/admin/referencement`) : titre et description de l'accueil tels que Google et les aperçus de liens (WhatsApp, Facebook…) les affichent, avec aperçu Google et compteur de caractères ; option pour montrer ou non la couverture dans les aperçus. `php/index.php` remplace `<title>` et la meta description du gabarit et ajoute les balises Open Graph (settings : `seo_titre`, `seo_description`, `seo_image`).
+
 ## Mise en ligne sur Hostinger (offre actuelle)
 
 1. **Paquet** (sur ce PC) : `cd site && npm install && npm run package:hostinger` → `deploy/hostinger.zip`.
