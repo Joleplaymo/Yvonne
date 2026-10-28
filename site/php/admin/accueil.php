@@ -149,7 +149,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 case 'el_add':
                     $type = (string) ($_POST['newtype'][$path[0]][$path[1]] ?? '');
                     if (isset($specs[$type], $s['rows'][$path[0]]['cols'][$path[1]]) && count($s['rows'][$path[0]]['cols'][$path[1]]['els']) < HOME_LIMITS['els']) {
-                        $s['rows'][$path[0]]['cols'][$path[1]]['els'][] = home_clean_el(['type' => $type, 'p' => $type === 'text' ? ['text' => 'Votre texte…'] : ($type === 'heading' ? ['text' => 'Votre titre'] : [])]);
+                        $newEl = home_clean_el(['type' => $type, 'p' => $type === 'text' ? ['text' => 'Votre texte…'] : ($type === 'heading' ? ['text' => 'Votre titre'] : [])]);
+                        $s['rows'][$path[0]]['cols'][$path[1]]['els'][] = $newEl;
+                        $_SESSION['home_open'] = $newEl['id'];
                     }
                     $msg = ['ok', 'Élément ajouté en bas de la colonne.'];
                     break;
@@ -206,6 +208,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
 [$flashId, $flashType, $flash] = $_SESSION['home_msg'] ?? [null, null, null];
 unset($_SESSION['home_msg']);
+$forceOpen = (string) ($_SESSION['home_open'] ?? '');
+unset($_SESSION['home_open']);
 $layout = home_layout($db);
 $customized = home_layout_custom($db);
 $texts = text_overrides($db);
@@ -241,6 +245,12 @@ ob_start();
   Les flèches, « + » et « × » enregistrent aussi vos changements en cours. Les changements apparaissent sur le site en quelques minutes.
   <a href="/" target="_blank">Voir l'accueil</a></p>
 
+<p class="home-tools">
+  <button type="button" class="cta outline small" data-fold="open">Tout déplier</button>
+  <button type="button" class="cta outline small" data-fold="close">Tout replier</button>
+  <button type="button" class="cta outline small" data-fold="sections">Sections ouvertes, détails repliés</button>
+</p>
+
 <?php foreach ($layout as $si => $s):
     $label = $s['name'] !== '' ? $s['name'] : 'Section ' . ($si + 1);
     $isFlash = $flashId === $s['id'];
@@ -258,8 +268,8 @@ ob_start();
       </div>
     </div>
     <?php if ($isFlash && $flash): ?><p class="notice<?= $flashType === 'error' ? ' error' : '' ?>"><?= h($flash) ?></p><?php endif ?>
-    <details<?= $isFlash ? ' open' : '' ?>>
-      <summary>Modifier cette section</summary>
+    <details id="k-<?= h($s['id']) ?>"<?= $isFlash ? ' open data-force' : '' ?>>
+      <summary>Modifier cette section<?= $s['rows'] ? ' <span class="hint">(' . count($s['rows']) . ' ligne' . (count($s['rows']) > 1 ? 's' : '') . ')</span>' : '' ?></summary>
       <div class="home-look">
         <div class="field"><label>Nom (pour vous repérer)</label><input name="s[name]" value="<?= h($s['name']) ?>" maxlength="60"></div>
         <div class="field"><label>Adresse d’ancre (ex. « livre » pour un lien #livre)</label><input name="s[anchor]" value="<?= h($s['anchor']) ?>" maxlength="30" pattern="[a-z0-9-]*"></div>
@@ -272,9 +282,10 @@ ob_start();
       </div>
 
       <?php foreach ($s['rows'] as $ri => $r): ?>
-        <div class="home-row">
+        <details class="home-row" id="k-<?= h($s['id']) ?>-r<?= $ri ?>" open>
+          <summary>Ligne <?= $ri + 1 ?> <span class="hint">· <?= count($r['cols']) ?> colonne<?= count($r['cols']) > 1 ? 's' : '' ?>, <?= array_sum(array_map(fn($c) => count($c['els']), $r['cols'])) ?> élément(s)</span></summary>
           <div class="home-bar">
-            <strong>Ligne <?= $ri + 1 ?></strong>
+            <strong>Réglages de la ligne</strong>
             <label>Écart entre colonnes <select name="s[rows][<?= $ri ?>][gap]"><?= opts(home_px_options(HOME_GAPS), (string) $r['gap']) ?></select></label>
             <label>Alignement vertical <select name="s[rows][<?= $ri ?>][valign]"><?= opts(['start' => 'En haut', 'center' => 'Centré', 'end' => 'En bas'], $r['valign']) ?></select></label>
             <label>Espace au-dessus <select name="s[rows][<?= $ri ?>][mt]"><?= opts(home_px_options(HOME_SPACES), (string) $r['mt']) ?></select></label>
@@ -285,9 +296,10 @@ ob_start();
           </div>
           <div class="home-cols">
           <?php foreach ($r['cols'] as $ci => $c): $cn = "s[rows][$ri][cols][$ci]"; ?>
-            <div class="home-col">
+            <details class="home-col" id="k-<?= h($s['id']) ?>-r<?= $ri ?>-c<?= $ci ?>" open>
+              <summary>Colonne <?= $ci + 1 ?> <span class="hint">· largeur <?= $c['w'] ?>, <?= count($c['els']) ?> élément(s)</span></summary>
               <div class="home-bar">
-                <strong>Colonne <?= $ci + 1 ?></strong>
+                <strong>Réglages de la colonne</strong>
                 <label>Largeur <select name="<?= $cn ?>[w]"><?php for ($w = 1; $w <= 20; $w++): ?><option value="<?= $w ?>"<?= $c['w'] === $w ? ' selected' : '' ?>><?= $w ?></option><?php endfor ?></select></label>
                 <label class="check"><input type="checkbox" name="<?= $cn ?>[card]" value="1"<?= $c['card'] ? ' checked' : '' ?>> Encadrée</label>
                 <label class="check"><input type="checkbox" name="<?= $cn ?>[m_last]" value="1"<?= $c['m_last'] ? ' checked' : '' ?>> Après les autres sur téléphone</label>
@@ -301,8 +313,13 @@ ob_start();
                   $en = "$cn" . "[els][$ei]";
                   $slot = $e['p']['slot'] ?? null;
                   ?>
-                <fieldset class="home-el">
-                  <legend><?= h($spec['label']) ?></legend>
+                <?php
+                  $prevText = trim(strip_tags(home_el_text($e['p'], $texts) ?: (string) ($e['p']['alt'] ?? $e['p']['b1_label'] ?? '')));
+                  $isForced = $forceOpen === $e['id'];
+                  ?>
+                <details class="home-el" id="k-<?= h($s['id']) ?>-e<?= h($e['id']) ?>"<?= $isForced ? ' open data-force' : '' ?>>
+                  <summary><?= h($spec['label']) ?><?= $prevText !== '' ? ' <span class="hint">· ' . h(mb_substr($prevText, 0, 60)) . (mb_strlen($prevText) > 60 ? '…' : '') . '</span>' : '' ?></summary>
+                  <div class="home-el-body">
                   <input type="hidden" name="<?= $en ?>[type]" value="<?= h($e['type']) ?>">
                   <input type="hidden" name="<?= $en ?>[id]" value="<?= h($e['id']) ?>">
                   <?php if ($slot): ?><input type="hidden" name="<?= $en ?>[p][slot]" value="<?= h($slot) ?>"><?php endif ?>
@@ -341,17 +358,18 @@ ob_start();
                       </div>
                     <?php endif ?>
                   <?php endforeach ?>
-                </fieldset>
+                  </div>
+                </details>
               <?php endforeach ?>
               <div class="home-add">
                 <select name="newtype[<?= $ri ?>][<?= $ci ?>]" aria-label="Type d’élément à ajouter"><?= opts(array_map(fn($x) => $x['label'], $specs), 'text') ?></select>
                 <?= btn("el_add:$ri.$ci", '+ Ajouter un élément') ?>
               </div>
-            </div>
+            </details>
           <?php endforeach ?>
           </div>
           <?= btn("col_add:$ri", '+ Ajouter une colonne', '', count($r['cols']) >= HOME_LIMITS['cols']) ?>
-        </div>
+        </details>
       <?php endforeach ?>
       <p><?= btn('row_add', '+ Ajouter une ligne', '', count($s['rows']) >= HOME_LIMITS['rows']) ?></p>
       <button class="cta" name="op" value="save">Enregistrer cette section</button>
@@ -372,6 +390,25 @@ ob_start();
   </form>
 <?php endif ?>
 <script>
+  // Replier / déplier : l'état de chaque bloc est retenu le temps de la session (il survit à l'enregistrement).
+  const folds = [...document.querySelectorAll('details[id^="k-"]')];
+  const store = (k, v) => { try { sessionStorage.setItem('yv-fold-' + k, v ? '1' : '0'); } catch (e) {} };
+  const load = (k) => { try { return sessionStorage.getItem('yv-fold-' + k); } catch (e) { return null; } };
+  folds.forEach((d) => {
+    const saved = load(d.id);
+    if (saved !== null && !d.hasAttribute('data-force')) d.open = saved === '1';
+    d.addEventListener('toggle', () => store(d.id, d.open));
+  });
+  document.querySelectorAll('[data-fold]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const mode = b.dataset.fold;
+      folds.forEach((d) => {
+        const isSection = /^k-[a-z0-9]+$/.test(d.id);
+        d.open = mode === 'open' ? true : mode === 'close' ? false : isSection;
+        store(d.id, d.open);
+      });
+    }),
+  );
   document.querySelectorAll('button[data-confirm]').forEach((b) =>
     b.addEventListener('click', (e) => { if (!confirm(b.dataset.confirm)) e.preventDefault(); }),
   );

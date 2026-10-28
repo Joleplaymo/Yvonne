@@ -64,17 +64,18 @@ h1, h2, h3 { font-weight: 900; letter-spacing: -0.025em; margin: 0; }
 .navlite {
   position: sticky; top: 0; z-index: 10;
   display: flex; align-items: center; gap: 30px; padding: 22px var(--pad-x);
-  font-weight: 600; font-size: 15.5px; background: var(--navy); color: var(--cream);
+  font-weight: 600; font-size: 15.5px; background: var(--nav-bg, var(--navy)); color: var(--nav-fg, var(--cream));
 }
-.navlite .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.02em; color: var(--cream); }
-.navlite a { opacity: 0.85; color: var(--cream); }
-.navlite a:hover { opacity: 1; color: var(--cream); }
+.navlite.static { position: static; }
+.navlite .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.02em; color: var(--nav-fg, var(--cream)); }
+.navlite a { opacity: 0.85; color: var(--nav-fg, var(--cream)); }
+.navlite a:hover { opacity: 1; color: var(--nav-fg, var(--cream)); }
 .navlite .push { margin-left: auto; }
-.navlite .order { color: var(--peach); font-weight: 800; display: inline-flex; align-items: center; gap: 8px; }
-.navlite .order:hover { color: var(--peach); }
+.navlite .order { color: var(--nav-accent, var(--peach)); font-weight: 800; display: inline-flex; align-items: center; gap: 8px; }
+.navlite .order:hover { color: var(--nav-accent, var(--peach)); }
 .cart-badge {
   display: inline-grid; place-content: center; min-width: 22px; height: 22px; padding: 0 6px;
-  border-radius: 999px; background: var(--peach); color: var(--navy); font-size: 13px; font-weight: 900;
+  border-radius: 999px; background: var(--nav-accent, var(--peach)); color: var(--nav-bg, var(--navy)); font-size: 13px; font-weight: 900;
 }
 .cart-badge[hidden] { display: none; }
 
@@ -130,7 +131,7 @@ h1, h2, h3 { font-weight: 900; letter-spacing: -0.025em; margin: 0; }
 /* Footer */
 .footer { display: flex; align-items: center; gap: 36px; flex-wrap: wrap; padding: 44px var(--pad-x); }
 .footer .links { display: flex; gap: 12px; margin-left: auto; align-items: center; }
-.footer a { color: var(--cream); }
+.footer a { color: var(--foot-fg, var(--cream)); }
 .footer small { opacity: 0.75; }
 
 /* Formulaires (panier / commande) */

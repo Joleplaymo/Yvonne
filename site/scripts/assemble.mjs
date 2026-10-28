@@ -47,6 +47,8 @@ for (const [slot, file] of Object.entries(photos)) {
       .toFile(`${out}/_prive/photos/${slot}-${width}.webp`);
   }
 }
+// Logo Instagram du pied de page personnalisable (/admin/entete), léger : affiché en 40 px.
+await sharp('src/assets/instagram.png').resize({ width: 96 }).webp({ quality: 85 }).toFile(`${out}/instagram.webp`);
 console.log(`OK : ${out}`);
 
 if (process.argv.includes('--zip')) {

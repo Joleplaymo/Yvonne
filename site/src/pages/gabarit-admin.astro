@@ -72,8 +72,12 @@ import Admin from '../layouts/Admin.astro';
   .home-bar .check { display: inline-flex; gap: 6px; align-items: center; font-weight: 400; }
   .home-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-bottom: 10px; }
   .home-col { background: #fff; border-radius: 10px; padding: 12px; }
-  .home-el { border: 1px solid var(--cream-2); border-radius: 10px; padding: 10px 12px; margin: 10px 0; display: flex; flex-direction: column; gap: 10px; }
-  .home-el legend { font-weight: 800; padding: 0 6px; }
+  .home-el { border: 1px solid var(--cream-2); border-radius: 10px; padding: 6px 12px; margin: 10px 0; }
+  .home-el-body { display: flex; flex-direction: column; gap: 10px; padding: 8px 0 6px; }
+  .home-el > summary { font-weight: 800; }
+  .home-row > summary, .home-col > summary { font-weight: 800; margin-bottom: 8px; }
+  .home-row > summary .hint, .home-col > summary .hint, .home-el > summary .hint, .home-sec summary .hint { font-weight: 400; margin: 0; }
+  .home-tools { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
   .home-el-move { justify-content: flex-end; }
   .home-el .field select { width: auto; max-width: 100%; }
   .home-move .small, .home-bar .small, .home-add .small { padding: 4px 12px; font-size: 14px; min-height: 36px; }

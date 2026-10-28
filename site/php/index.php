@@ -4,8 +4,9 @@ require __DIR__ . '/_prive/lib.php';
 require __DIR__ . '/_prive/textes.php';
 require __DIR__ . '/_prive/couleurs.php';
 require __DIR__ . '/_prive/accueil.php';
+require __DIR__ . '/_prive/entete.php';
 
-// Accueil : page générée au build (_prive/accueil.html) avec les textes, la mise en page et les couleurs choisis dans l'admin.
+// Accueil : page générée au build (_prive/accueil.html) avec les textes, la mise en page, l'en-tête, le pied de page et les couleurs choisis dans l'admin.
 $html = (string) file_get_contents(__DIR__ . '/_prive/accueil.html');
 try {
     $db = db();
@@ -20,7 +21,7 @@ try {
 }
 $html = home_apply($html, $layout, $texts);
 // Marqueurs des textes : le navigateur n'en a pas besoin.
-$html = theme_inject(preg_replace('/<!--\/?t:[a-z0-9_]+-->/', '', $html));
+$html = site_finish(preg_replace('/<!--\/?t:[a-z0-9_]+-->/', '', $html));
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: public, max-age=300');

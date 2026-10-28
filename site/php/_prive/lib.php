@@ -402,8 +402,8 @@ function render_page(string $title, string $content, string $template = 'gabarit
     header('X-Robots-Tag: noindex');
     $html = (string) file_get_contents(__DIR__ . "/$template.html");
     if ($template === 'gabarit') {
-        require_once __DIR__ . '/couleurs.php';
-        $html = theme_inject($html);
+        require_once __DIR__ . '/entete.php';
+        $html = site_finish($html);
     }
     echo str_replace(['%%TITLE%%', '<!--%%CONTENT%%-->'], [h($title), $content], $html);
     exit;
