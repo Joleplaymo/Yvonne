@@ -57,6 +57,25 @@ check('fond libre et texte automatique', str_contains($out, '--nav-bg:#112233;--
 check('sans panier ni barre fixe', !str_contains($out, 'cart-badge') && str_contains($out, 'navlite static'));
 check('premier lien poussé à droite, visible sur téléphone', str_contains($out, 'class="push" href="/#livre"'));
 
+// Police et couleur du nom et des liens.
+check('par défaut : aucune police ni couleur imposées', !str_contains($hd, '--nav-brand-') && !str_contains($hd, '--nav-link-') && chrome_font_links(chrome_header_default()) === '');
+chrome_save($db, 'header', [
+    'brand' => 'Yvonne', 'cart' => '1', 'cart_label' => 'Panier', 'bg' => 'navy', 'accent' => 'peach', 'pad' => '22', 'sticky' => '1',
+    'brand_font' => 'pacifico', 'brand_color' => '#ff8800', 'links_font' => 'montserrat', 'links_color' => 'peach',
+    'links' => [['label' => 'Livre', 'url' => '/#livre']],
+]);
+$h = chrome_load($db, 'header');
+check('police et couleur enregistrées', $h['brand_font'] === 'pacifico' && $h['brand_color'] === '#ff8800' && $h['links_font'] === 'montserrat' && $h['links_color'] === 'peach');
+$out = chrome_apply($page, $db);
+check('nom : police, graisse et couleur', str_contains($out, '--nav-brand-font:&#039;Pacifico&#039;, cursive;--nav-brand-weight:400;--nav-brand-color:#ff8800;'));
+check('liens : police, graisse et couleur', str_contains($out, '--nav-link-font:&#039;Montserrat&#039;, Arial, sans-serif;--nav-link-weight:600;--nav-link-color:var(--peach);'));
+check('feuille Google Fonts des polices choisies, dans le <head>', preg_match('#<link href="https://fonts.googleapis.com/css2\?family=Pacifico&amp;family=Montserrat:wght@400;600;800&amp;display=swap" rel="stylesheet"></head>#', $out) === 1);
+chrome_save($db, 'header', ['brand_font' => 'georgia', 'brand_color' => 'rouge', 'links_font' => 'inconnue', 'links_color' => 'url(x)', 'links' => []]);
+$h = chrome_load($db, 'header');
+check('police système : pas de feuille Google', $h['brand_font'] === 'georgia' && chrome_font_links($h) === '');
+check('police et couleur invalides ignorées', $h['brand_color'] === '' && $h['links_font'] === '' && $h['links_color'] === '');
+check('couleur hexadécimale en majuscules acceptée', chrome_clean_color('#AABBCC') === '#aabbcc' && chrome_clean_color('#abc') === '');
+
 // Enregistrer un pied de page.
 chrome_save($db, 'footer', [
     'text' => "Contact : [écrivez-moi](mailto:a@b.fr) **vite**\n<script>",

@@ -29,6 +29,37 @@ function chrome_icons(): array
     return ['instagram' => 'Instagram (logo)'] + HOME_ICONS;
 }
 
+/**
+ * Polices proposées pour le nom du site et les liens : clé → [libellé, famille CSS, famille Google Fonts (null = déjà disponible),
+ * graisse du nom, graisse des liens]. Les polices Google ne sont chargées que si l'en-tête les utilise.
+ */
+const CHROME_FONTS = [
+    '' => ['Police du site (Figtree)', null, null, null, null],
+    'playfair' => ['Playfair Display (élégante, à empattements)', "'Playfair Display', Georgia, serif", 'Playfair+Display:wght@400;700;900', '700', '700'],
+    'lora' => ['Lora (classique)', "'Lora', Georgia, serif", 'Lora:wght@400;600;700', '700', '600'],
+    'merriweather' => ['Merriweather (lisible, à empattements)', "'Merriweather', Georgia, serif", 'Merriweather:wght@400;700;900', '700', '700'],
+    'montserrat' => ['Montserrat (moderne)', "'Montserrat', Arial, sans-serif", 'Montserrat:wght@400;600;800', '800', '600'],
+    'poppins' => ['Poppins (arrondie)', "'Poppins', Arial, sans-serif", 'Poppins:wght@400;600;700', '700', '600'],
+    'caveat' => ['Caveat (écriture manuscrite)', "'Caveat', cursive", 'Caveat:wght@400;700', '700', '700'],
+    'pacifico' => ['Pacifico (script)', "'Pacifico', cursive", 'Pacifico', '400', '400'],
+    'georgia' => ['Georgia (système)', "Georgia, 'Times New Roman', serif", null, '700', '700'],
+    'system' => ['Arial (système)', "system-ui, Arial, sans-serif", null, '700', '600'],
+];
+
+/** '' (couleur de la barre), nom d'une couleur de texte, ou #rrggbb ; sinon ''. */
+function chrome_clean_color($v): string
+{
+    if (!is_string($v)) return '';
+    $v = strtolower(trim($v));
+    return $v === '' || isset(chrome_text_colors()[$v]) || preg_match('/^#[0-9a-f]{6}$/', $v) ? $v : '';
+}
+
+function chrome_color_css(string $v): ?string
+{
+    if ($v === '') return null;
+    return chrome_text_colors()[$v][1] ?? $v;
+}
+
 function chrome_header_default(): array
 {
     return [
@@ -39,6 +70,7 @@ function chrome_header_default(): array
         ],
         'cart' => true, 'cart_label' => 'je commande',
         'bg' => 'navy', 'fg' => '', 'accent' => 'peach', 'sticky' => true, 'pad' => 22,
+        'brand_font' => '', 'brand_color' => '', 'links_font' => '', 'links_color' => '',
     ];
 }
 
@@ -81,6 +113,9 @@ function chrome_clean_header($in): array
         'cart' => in_array($in['cart'] ?? '', [true, '1', 'on'], true),
         'cart_label' => chrome_str($in['cart_label'] ?? '', 40) ?: $d['cart_label'],
         'bg' => $bg, 'fg' => $fg, 'accent' => $accent,
+        'brand_font' => isset(CHROME_FONTS[(string) ($in['brand_font'] ?? '')]) ? (string) ($in['brand_font'] ?? '') : '',
+        'links_font' => isset(CHROME_FONTS[(string) ($in['links_font'] ?? '')]) ? (string) ($in['links_font'] ?? '') : '',
+        'brand_color' => chrome_clean_color($in['brand_color'] ?? ''), 'links_color' => chrome_clean_color($in['links_color'] ?? ''),
         'sticky' => in_array($in['sticky'] ?? '', [true, '1', 'on'], true),
         'pad' => in_array($pad, CHROME_HEADER_PADS, true) ? $pad : $d['pad'],
     ];
@@ -137,6 +172,12 @@ function chrome_render_header(array $c): string
 {
     $accent = chrome_text_colors()[$c['accent']][1];
     $style = '--nav-bg:' . home_color_css($c['bg']) . ';--nav-fg:' . chrome_fg_css($c) . ';--nav-accent:' . $accent . ';padding-top:' . $c['pad'] . 'px;padding-bottom:' . $c['pad'] . 'px;';
+    foreach (['brand', 'links'] as $part) {
+        $family = CHROME_FONTS[$c[$part . '_font']][1];
+        $weight = CHROME_FONTS[$c[$part . '_font']][$part === 'brand' ? 3 : 4];
+        if ($family !== null) $style .= '--nav-' . ($part === 'brand' ? 'brand' : 'link') . '-font:' . $family . ';--nav-' . ($part === 'brand' ? 'brand' : 'link') . '-weight:' . $weight . ';';
+        if ($color = chrome_color_css($c[$part . '_color'])) $style .= '--nav-' . ($part === 'brand' ? 'brand' : 'link') . '-color:' . $color . ';';
+    }
     $out = '<nav class="navlite' . ($c['sticky'] ? '' : ' static') . '" aria-label="Navigation principale" style="' . h($style) . '">'
         . '<a class="brand" href="' . h($c['brand_url']) . '">' . h($c['brand']) . '</a>';
     foreach ($c['links'] as $i => $l) {
@@ -167,12 +208,25 @@ function chrome_render_footer(array $c): string
     return $out . '</footer>';
 }
 
+/** Feuille de style Google Fonts des polices choisies pour l'en-tête (vide si aucune). */
+function chrome_font_links(array $c): string
+{
+    $families = [];
+    foreach (['brand_font', 'links_font'] as $k) {
+        if ($g = CHROME_FONTS[$c[$k]][2]) $families[$g] = 'family=' . $g;
+    }
+    return $families ? '<link href="https://fonts.googleapis.com/css2?' . h(implode('&', $families)) . '&amp;display=swap" rel="stylesheet">' : '';
+}
+
 /** Remplace l'en-tête et le pied d'origine par ceux de l'admin (s'ils existent), puis retire les repères. */
 function chrome_apply(string $html, PDO $db): string
 {
     foreach (['header' => 'chrome_render_header', 'footer' => 'chrome_render_footer'] as $part => $render) {
         $cfg = chrome_load($db, $part);
         if ($cfg !== null) {
+            if ($part === 'header' && ($links = chrome_font_links($cfg)) !== '' && ($pos = strpos($html, '</head>')) !== false) {
+                $html = substr_replace($html, $links, $pos, 0);
+            }
             $html = (string) preg_replace_callback('/<!--chrome:' . $part . '-->.*?<!--\/chrome:' . $part . '-->/s', fn() => $render($cfg), $html, 1);
         }
     }

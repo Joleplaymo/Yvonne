@@ -67,9 +67,10 @@ h1, h2, h3 { font-weight: 900; letter-spacing: -0.025em; margin: 0; }
   font-weight: 600; font-size: 15.5px; background: var(--nav-bg, var(--navy)); color: var(--nav-fg, var(--cream));
 }
 .navlite.static { position: static; }
-.navlite .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.02em; color: var(--nav-fg, var(--cream)); }
-.navlite a { opacity: 0.85; color: var(--nav-fg, var(--cream)); }
-.navlite a:hover { opacity: 1; color: var(--nav-fg, var(--cream)); }
+.navlite .brand { font-family: var(--nav-brand-font, inherit); font-weight: var(--nav-brand-weight, 900); font-size: 18px; letter-spacing: -0.02em; color: var(--nav-brand-color, var(--nav-fg, var(--cream))); }
+.navlite .brand:hover { color: var(--nav-brand-color, var(--nav-fg, var(--cream))); }
+.navlite a { opacity: 0.85; color: var(--nav-link-color, var(--nav-fg, var(--cream))); font-family: var(--nav-link-font, inherit); font-weight: var(--nav-link-weight, 600); }
+.navlite a:hover { opacity: 1; color: var(--nav-link-color, var(--nav-fg, var(--cream))); }
 .navlite .push { margin-left: auto; }
 .navlite .order { color: var(--nav-accent, var(--peach)); font-weight: 800; display: inline-flex; align-items: center; gap: 8px; }
 .navlite .order:hover { color: var(--nav-accent, var(--peach)); }
