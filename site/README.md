@@ -51,8 +51,9 @@ site/
 - **Couleurs** (`/admin/couleurs`) : changer la palette de l'accueil, du panier, de la commande et des pages de paiement (6 couleurs, aperçu en direct, alerte si le contraste est faible). Les nuances proches (survol, fonds, textes atténués) se calculent seules. L'admin garde ses couleurs.
   Les couleurs modifiées sont rangées dans `settings` (clés `couleur:…`) et ajoutées aux pages sous forme de variables CSS. Accueil, panier et commande sont donc servis par PHP (`index.php`, `page.php`).
 
-- **Accueil** (`/admin/accueil`) : mise en page complète de la page d'accueil. Chaque section se déplace (flèches), se masque, change de fond, de couleur de texte et d'espacement.
-  On peut aussi ajouter ses propres sections : texte, photo, image + texte, colonnes, citation (photos téléversées comme dans « photos »). Les 6 sections d'origine sont repérées dans `index.astro` par `<!--sec:id-->` ; `php/index.php` les réordonne selon la liste enregistrée (`settings`, clé `accueil_mise_en_page`, JSON). Sans personnalisation, la page d'origine s'affiche telle quelle.
+- **Accueil** (`/admin/accueil`) : page d'accueil entièrement paramétrable. Une section contient des lignes, une ligne des colonnes, une colonne des éléments (titre, paragraphe, image, boutons, icône, image + légende, espace). Tout s'ajoute, se supprime, se déplace et se règle (textes, photos, tailles, couleurs, espacements, alignements, fond de chaque section).
+  La mise en page est rangée en JSON dans `settings` (clé `accueil_mise_en_page`) et composée par `php/index.php` à l'emplacement `<!--home-->` de `index.astro`. Tant qu'elle n'est pas enregistrée, la page d'origine (`home_default_layout` dans `php/_prive/accueil.php`) s'affiche, avec les textes de `/admin/textes`. Un texte réécrit dans l'éditeur ne suit plus `/admin/textes`.
+  « Rétablir la mise en page d'origine » efface tout. L'aperçu local (`npm run dev`) n'affiche pas ces sections : il faut `npm run assemble` puis `npm run php`.
 
 ## Mise en ligne sur Hostinger (offre actuelle)
 

@@ -15,10 +15,10 @@ const PHOTO_WIDTHS = [480, 960];
 const PHOTO_MAX_BYTES = 15 * 1024 * 1024;
 const PHOTO_MAX_PIXELS = 40_000_000;
 
-/** Emplacements fixes (PHOTO_SLOTS) et photos des blocs libres de l'accueil (img-b… : voir accueil.php). */
+/** Emplacements fixes (PHOTO_SLOTS) et photos des éléments de l'accueil (img-{id} : voir accueil.php). */
 function photo_slot_valid(string $slot): bool
 {
-    return isset(PHOTO_SLOTS[$slot]) || (bool) preg_match('/^img-b[0-9a-f]{6}$/', $slot);
+    return isset(PHOTO_SLOTS[$slot]) || (bool) preg_match('/^img-[a-z][a-z0-9]{2,11}$/', $slot);
 }
 
 /** Date de la photo personnalisée (pour renouveler l'adresse quand elle change), 0 sinon. */
@@ -49,6 +49,16 @@ function photo_file(string $slot, int $width): ?string
 function photo_is_custom(string $slot): bool
 {
     return (bool) glob(photo_dir() . "/$slot-*.{webp,jpg}", GLOB_BRACE);
+}
+
+/** Copie la photo personnalisée d'un emplacement vers un autre (duplication d'une section). */
+function photo_copy(string $from, string $to): void
+{
+    if (!photo_slot_valid($to)) return;
+    photo_reset($to);
+    foreach (glob(photo_dir() . "/$from-*.{webp,jpg}", GLOB_BRACE) ?: [] as $f) {
+        @copy($f, photo_dir() . '/' . $to . substr(basename($f), strlen($from)));
+    }
 }
 
 function photo_reset(string $slot): void

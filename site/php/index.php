@@ -9,12 +9,16 @@ require __DIR__ . '/_prive/accueil.php';
 $html = (string) file_get_contents(__DIR__ . '/_prive/accueil.html');
 try {
     $db = db();
-    $html = text_apply($html, text_overrides($db));
-    $html = home_apply($html, home_layout($db));
+    $texts = text_overrides($db);
+    $html = text_apply($html, $texts);
+    $layout = home_layout($db, $texts);
 } catch (Throwable $e) {
     // Base illisible : mieux vaut afficher la page d'origine que casser la page d'accueil.
     error_log('accueil : ' . $e->getMessage());
+    $texts = [];
+    $layout = home_default_layout();
 }
+$html = home_apply($html, $layout, $texts);
 // Marqueurs des textes : le navigateur n'en a pas besoin.
 $html = theme_inject(preg_replace('/<!--\/?t:[a-z0-9_]+-->/', '', $html));
 
