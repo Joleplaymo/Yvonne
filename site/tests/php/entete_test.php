@@ -90,6 +90,23 @@ check('texte du pied échappé', str_contains($out, '&lt;script&gt;') && !str_co
 check('couleurs du pied', str_contains($out, 'background:var(--navy);color:var(--peach);--foot-fg:var(--peach);padding-top:60px;'));
 check('icône du pied : svg', !str_contains($out, 'instagram.webp'));
 
+// Police et couleur du texte et des liens du pied de page.
+check('pied par défaut : aucune police ni couleur imposées', !str_contains($fd, '--foot-text-') && !str_contains($fd, '--foot-link-') && chrome_font_links(chrome_footer_default(), ['text_font', 'links_font']) === '');
+chrome_save($db, 'footer', [
+    'text' => 'Contact', 'bg' => 'olive', 'pad' => '44',
+    'text_font' => 'lora', 'text_color' => 'white', 'links_font' => 'caveat', 'links_color' => '#ff8800',
+    'links' => [['icon' => 'mail', 'url' => 'mailto:a@b.fr']],
+]);
+$f = chrome_load($db, 'footer');
+check('police et couleur du pied enregistrées', $f['text_font'] === 'lora' && $f['text_color'] === 'white' && $f['links_font'] === 'caveat' && $f['links_color'] === '#ff8800');
+$out = chrome_apply($page, $db);
+check('texte du pied : police et couleur', str_contains($out, '--foot-text-font:&#039;Lora&#039;, Georgia, serif;--foot-text-color:#fff;') && str_contains($out, 'class="foot-text"'));
+check('liens du pied : police et couleur', str_contains($out, '--foot-link-font:&#039;Caveat&#039;, cursive;--foot-link-color:#ff8800;'));
+check('feuille Google Fonts du pied, dans le <head>', preg_match('#<link href="https://fonts.googleapis.com/css2\?family=Lora:wght@400;600;700&amp;family=Caveat:wght@400;700&amp;display=swap" rel="stylesheet"></head>#', $out) === 1);
+chrome_save($db, 'footer', ['text' => 'x', 'text_font' => 'inconnue', 'text_color' => 'rouge', 'links_font' => 'georgia', 'links_color' => '', 'links' => []]);
+$f = chrome_load($db, 'footer');
+check('valeurs invalides du pied ignorées', $f['text_font'] === '' && $f['text_color'] === '' && $f['links_font'] === 'georgia');
+
 // Rétablir.
 chrome_reset($db, 'header');
 chrome_reset($db, 'footer');

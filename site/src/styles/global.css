@@ -132,7 +132,8 @@ h1, h2, h3 { font-weight: 900; letter-spacing: -0.025em; margin: 0; }
 /* Footer */
 .footer { display: flex; align-items: center; gap: 36px; flex-wrap: wrap; padding: 44px var(--pad-x); }
 .footer .links { display: flex; gap: 12px; margin-left: auto; align-items: center; }
-.footer a { color: var(--foot-fg, var(--cream)); }
+.footer a { color: var(--foot-link-color, var(--foot-fg, var(--cream))); font-family: var(--foot-link-font, inherit); }
+.footer .foot-text { font-family: var(--foot-text-font, inherit); color: var(--foot-text-color, inherit); }
 .footer small { opacity: 0.75; }
 
 /* Formulaires (panier / commande) */

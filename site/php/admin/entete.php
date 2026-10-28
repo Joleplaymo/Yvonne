@@ -22,7 +22,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $_SESSION['chrome_msg'] = [$part, 'ok', ($part === 'header' ? 'En-tête' : 'Pied de page') . ' d’origine rétabli.'];
     } else {
         $in['bg'] = posted_bg($in);
-        foreach (['brand_color', 'links_color'] as $k) {
+        foreach (['brand_color', 'links_color', 'text_color'] as $k) {
             if (($in[$k] ?? '') === 'custom') $in[$k] = $in[$k . '_custom'] ?? '';
         }
         // Lignes de liens : les lignes vides disparaissent.
@@ -143,8 +143,13 @@ ob_start();
     <div class="home-look">
       <div class="field"><label>Fond</label><div class="color-row"><?= color_select('c[bg]', $f['bg'], 'c[bg_custom]') ?></div></div>
       <div class="field"><label>Couleur du texte</label><select name="c[fg]"><?= opts(['' => 'Automatique'] + $textColors, $f['fg']) ?></select></div>
+      <div class="field"><label>Texte : police</label><select name="c[text_font]"><?= opts($fontOptions, $f['text_font']) ?></select></div>
+      <div class="field"><label>Texte : couleur</label><div class="color-row"><?= text_color_select('c[text_color]', $f['text_color']) ?></div></div>
+      <div class="field"><label>Liens (dans le texte) : police</label><select name="c[links_font]"><?= opts($fontOptions, $f['links_font']) ?></select></div>
+      <div class="field"><label>Liens et icônes : couleur</label><div class="color-row"><?= text_color_select('c[links_color]', $f['links_color']) ?></div></div>
       <div class="field"><label>Hauteur du pied de page</label><select name="c[pad]"><?= opts(array_combine(CHROME_FOOTER_PADS, array_map(fn($p) => "$p px", CHROME_FOOTER_PADS)), (string) $f['pad']) ?></select></div>
     </div>
+    <div class="nav-preview" id="foot-preview"><span id="fpv-text">Presse, libraires et partenariats —</span><span id="fpv-links">contact@vanessagandino.fr</span></div>
     <button class="cta">Enregistrer le pied de page</button>
   </form>
   <?php if ($footer): ?>
@@ -157,29 +162,37 @@ $families = array_filter(array_map(fn($x) => $x[2], CHROME_FONTS));
 ?>
 <link href="https://fonts.googleapis.com/css2?<?= h(implode('&', array_map(fn($g) => 'family=' . $g, $families))) ?>&amp;display=swap" rel="stylesheet">
 <script>
-  // Aperçu de la barre : police et couleur choisies (sans enregistrer).
+  // Aperçu des barres : police, couleurs et fond choisis (sans enregistrer).
   const FONTS = <?= json_encode(array_map(fn($x) => [$x[1], $x[3], $x[4]], CHROME_FONTS), JSON_UNESCAPED_UNICODE) ?>;
   const COLORS = <?= json_encode(array_map(fn($c) => $c[1], chrome_text_colors())) ?>;
-  const root = document.getElementById('nav-preview');
-  const form = document.querySelector('#header form');
-  const apply = (part) => {
-    const el = document.getElementById(part === 'brand' ? 'pv-brand' : 'pv-links');
-    const f = FONTS[form.elements['c[' + part + '_font]'].value] || FONTS[''];
-    el.style.fontFamily = f[0] || '';
-    el.style.fontWeight = f[0] ? f[part === 'brand' ? 1 : 2] : (part === 'brand' ? 900 : 600);
-    const c = form.elements['c[' + part + '_color]'].value;
-    el.style.color = c === 'custom' ? form.elements['c[' + part + '_color_custom]'].value : (COLORS[c] || '');
-  };
-  ['brand', 'links'].forEach((p) => {
-    form.elements['c[' + p + '_font]'].addEventListener('change', () => apply(p));
-    form.elements['c[' + p + '_color]'].addEventListener('change', () => apply(p));
-    form.elements['c[' + p + '_color_custom]'].addEventListener('input', () => { form.elements['c[' + p + '_color]'].value = 'custom'; apply(p); });
-    apply(p);
-  });
-  const bg = form.elements['c[bg]'], bgc = form.elements['c[bg_custom]'], fg = form.elements['c[fg]'];
   const BG = {cream:'#f9f0da',sand:'#efe0be',navy:'#1b365d',olive:'#566b25',terra:'#b67233',peach:'#f1975c',white:'#ffffff'};
-  const paint = () => { root.style.background = bg.value === 'custom' ? bgc.value : (BG[bg.value] || '#1b365d'); root.style.setProperty('--pv-fg', fg.value ? (COLORS[fg.value] || '#f9f0da') : '#f9f0da'); };
-  bg.addEventListener('change', paint); bgc.addEventListener('input', () => { bg.value = 'custom'; paint(); }); fg.addEventListener('change', paint); paint();
+  function wire(section, previewId, parts, defaultBg) {
+    const form = document.querySelector('#' + section + ' form');
+    const root = document.getElementById(previewId);
+    const apply = ([part, spanId, defWeight, weightIndex]) => {
+      const el = document.getElementById(spanId);
+      const f = FONTS[form.elements['c[' + part + '_font]'].value] || FONTS[''];
+      el.style.fontFamily = f[0] || '';
+      el.style.fontWeight = f[0] && weightIndex !== null ? f[weightIndex] : defWeight;
+      const c = form.elements['c[' + part + '_color]'].value;
+      el.style.color = c === 'custom' ? form.elements['c[' + part + '_color_custom]'].value : (COLORS[c] || '');
+    };
+    parts.forEach((p) => {
+      const key = p[0];
+      form.elements['c[' + key + '_font]'].addEventListener('change', () => apply(p));
+      form.elements['c[' + key + '_color]'].addEventListener('change', () => apply(p));
+      form.elements['c[' + key + '_color_custom]'].addEventListener('input', () => { form.elements['c[' + key + '_color]'].value = 'custom'; apply(p); });
+      apply(p);
+    });
+    const bg = form.elements['c[bg]'], bgc = form.elements['c[bg_custom]'], fg = form.elements['c[fg]'];
+    const paint = () => {
+      root.style.background = bg.value === 'custom' ? bgc.value : (BG[bg.value] || defaultBg);
+      root.style.setProperty('--pv-fg', fg.value ? (COLORS[fg.value] || '#f9f0da') : '#f9f0da');
+    };
+    bg.addEventListener('change', paint); bgc.addEventListener('input', () => { bg.value = 'custom'; paint(); }); fg.addEventListener('change', paint); paint();
+  }
+  wire('header', 'nav-preview', [['brand', 'pv-brand', 900, 1], ['links', 'pv-links', 600, 2]], '#1b365d');
+  wire('footer', 'foot-preview', [['text', 'fpv-text', 400, null], ['links', 'fpv-links', 400, null]], '#566b25');
 </script>
 <?php
 admin_page('En-tête et pied de page', (string) ob_get_clean());

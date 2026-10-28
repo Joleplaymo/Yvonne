@@ -55,7 +55,7 @@ site/
   La mise en page est rangée en JSON dans `settings` (clé `accueil_mise_en_page`) et composée par `php/index.php` à l'emplacement `<!--home-->` de `index.astro`. Tant qu'elle n'est pas enregistrée, la page d'origine (`home_default_layout` dans `php/_prive/accueil.php`) s'affiche, avec les textes de `/admin/textes`. Un texte réécrit dans l'éditeur ne suit plus `/admin/textes`.
   « Rétablir la mise en page d'origine » efface tout. L'aperçu local (`npm run dev`) n'affiche pas ces sections : il faut `npm run assemble` puis `npm run php`.
 
-- **En-tête / pied** (`/admin/entete`) : barre du haut (nom avec police et couleur au choix, jusqu'à 6 liens (police et couleur au choix) avec visibilité sur téléphone, lien panier, couleurs, hauteur, barre fixe ou non) et pied de page (texte avec liens, jusqu'à 6 icônes-liens, couleurs, hauteur) sur toutes les pages publiques.
+- **En-tête / pied** (`/admin/entete`) : barre du haut (nom avec police et couleur au choix, jusqu'à 6 liens (police et couleur au choix) avec visibilité sur téléphone, lien panier, couleurs, hauteur, barre fixe ou non) et pied de page (texte et liens avec police et couleur au choix, jusqu'à 6 icônes-liens, couleurs, hauteur) sur toutes les pages publiques.
   `Base.astro` repère les deux par `<!--chrome:header-->` / `<!--chrome:footer-->` ; sans configuration enregistrée (`settings`, clés `site_entete` et `site_pied`), le gabarit d'origine reste en place.
 - Dans l'éditeur d'accueil, chaque section, ligne, colonne et élément se replie / se déplie (boutons « Tout déplier », « Tout replier », « Sections ouvertes, détails repliés » ; l'état est retenu pendant la session).
 

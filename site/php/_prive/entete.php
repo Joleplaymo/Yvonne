@@ -83,6 +83,7 @@ function chrome_footer_default(): array
             ['icon' => 'mail', 'url' => 'mailto:contact@vanessagandino.fr', 'label' => 'E-mail'],
         ],
         'bg' => 'olive', 'fg' => '', 'pad' => 44,
+        'text_font' => '', 'text_color' => '', 'links_font' => '', 'links_color' => '',
     ];
 }
 
@@ -136,7 +137,12 @@ function chrome_clean_footer($in): array
     $bg = is_string($in['bg'] ?? null) && home_color_valid($in['bg']) ? $in['bg'] : $d['bg'];
     $fg = is_string($in['fg'] ?? null) && isset(chrome_text_colors()[$in['fg']]) ? $in['fg'] : '';
     $pad = (int) ($in['pad'] ?? $d['pad']);
-    return ['text' => $text, 'links' => $links, 'bg' => $bg, 'fg' => $fg, 'pad' => in_array($pad, CHROME_FOOTER_PADS, true) ? $pad : $d['pad']];
+    return [
+        'text' => $text, 'links' => $links, 'bg' => $bg, 'fg' => $fg, 'pad' => in_array($pad, CHROME_FOOTER_PADS, true) ? $pad : $d['pad'],
+        'text_font' => isset(CHROME_FONTS[(string) ($in['text_font'] ?? '')]) ? (string) ($in['text_font'] ?? '') : '',
+        'links_font' => isset(CHROME_FONTS[(string) ($in['links_font'] ?? '')]) ? (string) ($in['links_font'] ?? '') : '',
+        'text_color' => chrome_clean_color($in['text_color'] ?? ''), 'links_color' => chrome_clean_color($in['links_color'] ?? ''),
+    ];
 }
 
 /** Configuration enregistrée, ou null : le gabarit d'origine reste alors en place. */
@@ -193,8 +199,13 @@ function chrome_render_header(array $c): string
 function chrome_render_footer(array $c): string
 {
     $style = 'background:' . home_color_css($c['bg']) . ';color:' . chrome_fg_css($c) . ';--foot-fg:' . chrome_fg_css($c) . ';padding-top:' . $c['pad'] . 'px;padding-bottom:' . $c['pad'] . 'px;';
+    foreach (['text' => 'text', 'links' => 'link'] as $part => $var) {
+        $family = CHROME_FONTS[$c[$part . '_font']][1];
+        if ($family !== null) $style .= "--foot-$var-font:$family;";
+        if ($color = chrome_color_css($c[$part . '_color'])) $style .= "--foot-$var-color:$color;";
+    }
     $out = '<footer class="footer" style="' . h($style) . '">';
-    if ($c['text'] !== '') $out .= '<span style="font-size:15px;opacity:.9;">' . home_rich($c['text']) . '</span>';
+    if ($c['text'] !== '') $out .= '<span class="foot-text" style="font-size:15px;opacity:.9;">' . home_rich($c['text']) . '</span>';
     if ($c['links']) {
         $out .= '<div class="links">';
         foreach ($c['links'] as $l) {
@@ -209,10 +220,10 @@ function chrome_render_footer(array $c): string
 }
 
 /** Feuille de style Google Fonts des polices choisies pour l'en-tête (vide si aucune). */
-function chrome_font_links(array $c): string
+function chrome_font_links(array $c, array $keys = ['brand_font', 'links_font']): string
 {
     $families = [];
-    foreach (['brand_font', 'links_font'] as $k) {
+    foreach ($keys as $k) {
         if ($g = CHROME_FONTS[$c[$k]][2]) $families[$g] = 'family=' . $g;
     }
     return $families ? '<link href="https://fonts.googleapis.com/css2?' . h(implode('&', $families)) . '&amp;display=swap" rel="stylesheet">' : '';
@@ -224,7 +235,8 @@ function chrome_apply(string $html, PDO $db): string
     foreach (['header' => 'chrome_render_header', 'footer' => 'chrome_render_footer'] as $part => $render) {
         $cfg = chrome_load($db, $part);
         if ($cfg !== null) {
-            if ($part === 'header' && ($links = chrome_font_links($cfg)) !== '' && ($pos = strpos($html, '</head>')) !== false) {
+            $links = chrome_font_links($cfg, $part === 'header' ? ['brand_font', 'links_font'] : ['text_font', 'links_font']);
+            if ($links !== '' && ($pos = strpos($html, '</head>')) !== false) {
                 $html = substr_replace($html, $links, $pos, 0);
             }
             $html = (string) preg_replace_callback('/<!--chrome:' . $part . '-->.*?<!--\/chrome:' . $part . '-->/s', fn() => $render($cfg), $html, 1);
