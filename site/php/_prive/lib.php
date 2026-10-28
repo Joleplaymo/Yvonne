@@ -401,6 +401,10 @@ function render_page(string $title, string $content, string $template = 'gabarit
     header('Cache-Control: no-store');
     header('X-Robots-Tag: noindex');
     $html = (string) file_get_contents(__DIR__ . "/$template.html");
+    if ($template === 'gabarit') {
+        require_once __DIR__ . '/couleurs.php';
+        $html = theme_inject($html);
+    }
     echo str_replace(['%%TITLE%%', '<!--%%CONTENT%%-->'], [h($title), $content], $html);
     exit;
 }

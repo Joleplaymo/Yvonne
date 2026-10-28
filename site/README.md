@@ -48,6 +48,9 @@ site/
   Les textes modifiés sont rangés dans la base (`commandes.sqlite`, table `settings`, clés `texte:…`). L'accueil est alors servi par `php/index.php`, qui remplace les textes repérés dans `_prive/accueil.html`.
   Pour rendre un nouveau texte modifiable : le déclarer dans `src/content/textes.json` et l'afficher avec `<T k="clé" />`.
 
+- **Couleurs** (`/admin/couleurs`) : changer la palette de l'accueil, du panier, de la commande et des pages de paiement (6 couleurs, aperçu en direct, alerte si le contraste est faible). Les nuances proches (survol, fonds, textes atténués) se calculent seules. L'admin garde ses couleurs.
+  Les couleurs modifiées sont rangées dans `settings` (clés `couleur:…`) et ajoutées aux pages sous forme de variables CSS. Accueil, panier et commande sont donc servis par PHP (`index.php`, `page.php`).
+
 ## Mise en ligne sur Hostinger (offre actuelle)
 
 1. **Paquet** (sur ce PC) : `cd site && npm install && npm run package:hostinger` → `deploy/hostinger.zip`.

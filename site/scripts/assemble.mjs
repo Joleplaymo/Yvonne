@@ -17,6 +17,8 @@ cpSync('dist', out, { recursive: true });
 cpSync('php', out, { recursive: true });
 // L'accueil est servi par php/index.php (textes modifiables) ; le catalogue des textes accompagne le code PHP.
 renameSync(`${out}/index.html`, `${out}/_prive/accueil.html`);
+// Panier et commande passent aussi par PHP (couleurs modifiables depuis /admin/couleurs).
+for (const p of ['panier', 'commande']) renameSync(`${out}/${p}.html`, `${out}/_prive/${p}.html`);
 cpSync('src/content/textes.json', `${out}/_prive/textes.json`);
 for (const t of ['gabarit', 'gabarit-admin']) renameSync(`${out}/${t}.html`, `${out}/_prive/${t}.html`);
 
