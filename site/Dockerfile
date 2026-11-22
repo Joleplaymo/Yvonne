@@ -6,12 +6,12 @@ RUN npm ci
 COPY . .
 RUN npm test && npm run build && node scripts/assemble.mjs
 
-# --- PHP + Apache, comme l'hébergement (GD pour les photos) -----------
+# --- PHP + Apache, comme l'hébergement (GD pour les photos, zip pour les epub)
 FROM php:8.3-apache AS php-base
 RUN apt-get update \
- && apt-get install -y --no-install-recommends libjpeg62-turbo-dev libpng-dev libwebp-dev \
+ && apt-get install -y --no-install-recommends libjpeg62-turbo-dev libpng-dev libwebp-dev libzip-dev \
  && docker-php-ext-configure gd --with-jpeg --with-webp \
- && docker-php-ext-install -j"$(nproc)" gd exif \
+ && docker-php-ext-install -j"$(nproc)" gd exif zip \
  && rm -rf /var/lib/apt/lists/* \
  && a2enmod rewrite headers expires \
  && sed -ri 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf \
