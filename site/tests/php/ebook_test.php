@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 putenv('DATA_DIR=' . sys_get_temp_dir() . '/yv-test-ebook-' . getmypid());
 require __DIR__ . '/../../php/_prive/ebook.php';
+require __DIR__ . '/../../php/_prive/mail.php';
 
 $fails = 0;
 $count = 0;
@@ -102,6 +103,40 @@ check('prix réglable', ebook_price_cents($db) === 699);
 $s1 = ebook_secret($db);
 check('secret généré et stable', strlen($s1) === 64 && ebook_secret($db) === $s1);
 check('chemin du maître', str_ends_with(ebook_master_path(), '/epub/maitre.epub'));
+
+// --- E-mails (mode journal : mail_log() écrit dans error_log)
+cfg_override(['mail_mode' => 'log', 'public_base_url' => 'https://exemple.test', 'admin_email' => 'admin@exemple.test']);
+$logFile = sys_get_temp_dir() . '/yv-test-ebook-mail-' . getmypid() . '.log';
+ini_set('error_log', $logFile);
+$readLog = static function () use ($logFile): string {
+    $s = is_file($logFile) ? (string) file_get_contents($logFile) : '';
+    @unlink($logFile);
+    return $s;
+};
+$mo = find_ebook_order($db, 'EB-0001');
+
+check('URL page commande', ebook_order_page_url($mo) === 'https://exemple.test/numerique/merci?ref=EB-0001&t=' . $mo['token']);
+check('URL téléchargement', ebook_download_url('abc_-9') === 'https://exemple.test/telecharger/abc_-9');
+
+$readLog();
+mail_ebook_created($mo);
+$log = $readLog();
+check('mail commande : consentement et date',
+    str_contains($log, EBOOK_CONSENT_TEXT) && str_contains($log, fr_date($mo['consent_at'], true))
+    && str_contains($log, revolut_link(cfg()['revolut_link_template'], 499, 'EB-0001')) && str_contains($log, 'EB-0001')
+    && str_contains($log, 'À: ' . $mo['email']) && str_contains($log, ebook_order_page_url($mo)));
+check('mail commande : copie à l\'admin', str_contains($log, 'À: admin@exemple.test') && str_contains($log, 'Nouvelle commande numérique EB-0001'));
+
+mail_ebook_delivered($mo, 'TOKEN123');
+$log = $readLog();
+check('mail livraison : lien, 7 jours, 5 téléchargements',
+    str_contains($log, ebook_download_url('TOKEN123')) && str_contains($log, '7 jours') && str_contains($log, '5')
+    && str_contains($log, 'À: ' . $mo['email']));
+
+mail_ebook_share_alert($mo, 4);
+$log = $readLog();
+check('mail alerte : ref et nombre d\'IP', str_contains($log, 'EB-0001') && str_contains($log, '4 adresses IP')
+    && str_contains($log, 'À: admin@exemple.test'));
 
 // --- Tunnel papier intact
 $cols = array_column($db->query('PRAGMA table_info(orders)')->fetchAll(), 'name');

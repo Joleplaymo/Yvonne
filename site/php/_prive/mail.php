@@ -170,3 +170,63 @@ Mondial Relay vous préviendra par SMS/e-mail à son arrivée.
 Bonne lecture !
 Vanessa");
 }
+
+// ---------------------------------------------------------------- Livre numérique
+
+function mail_ebook_created(array $o): void
+{
+    $c = cfg();
+    $pay = revolut_link($c['revolut_link_template'], (int) $o['price_cents'], $o['ref']);
+    $price = eur((int) $o['price_cents']);
+    send_mail($o['email'], "Votre commande {$o['ref']} — Les hormones d'Yvonne (livre numérique)", "Bonjour {$o['first_name']},
+
+Merci pour votre commande du livre numérique « Les hormones d'Yvonne » (format .epub) !
+Votre lien de téléchargement vous sera envoyé par e-mail dès que j'aurai reçu votre paiement (sous 24 h).
+
+Commande {$o['ref']} — $price
+
+Pour régler $price avec Revolut :
+$pay
+Merci d'indiquer la référence {$o['ref']} dans le message du paiement.
+
+Votre accord, enregistré le " . fr_date($o['consent_at'], true) . " :
+« {$o['consent_text']} »
+
+Suivre votre commande : " . ebook_order_page_url($o) . "
+
+Hormonalement vôtre,
+Vanessa");
+    if ($c['admin_email'] !== '') {
+        send_mail($c['admin_email'], "Nouvelle commande numérique {$o['ref']} — $price", "Commande {$o['ref']} — livre numérique — $price
+
+Client : {$o['first_name']} {$o['last_name']} — {$o['email']}
+Consentement : " . fr_date($o['consent_at'], true) . " (IP {$o['consent_ip']})
+
+Admin : {$c['public_base_url']}/admin/{$o['ref']}");
+    }
+}
+
+function mail_ebook_delivered(array $o, string $token): void
+{
+    send_mail($o['email'], "Votre livre numérique est prêt — commande {$o['ref']}", "Bonjour {$o['first_name']},
+
+Votre paiement est bien arrivé, merci ! Voici votre lien de téléchargement :
+" . ebook_download_url($token) . "
+
+Ce lien est personnel : il est valable " . EBOOK_DL_DAYS . " jours et permet " . EBOOK_DL_MAX . " téléchargements.
+Le fichier est marqué à votre nom, merci de ne pas le partager.
+Un souci ? Répondez simplement à ce message.
+
+Bonne lecture !
+Vanessa");
+}
+
+function mail_ebook_share_alert(array $o, int $ips): void
+{
+    $c = cfg();
+    if ($c['admin_email'] === '') return;
+    send_mail($c['admin_email'], "Alerte partage possible — {$o['ref']}", "Le lien de téléchargement de la commande {$o['ref']} ({$o['first_name']} {$o['last_name']}, {$o['email']}) a été utilisé depuis $ips adresses IP différentes.
+
+C'est peut-être un partage du lien. Vous pouvez le vérifier ou annuler la commande dans l'admin :
+{$c['public_base_url']}/admin/{$o['ref']}");
+}

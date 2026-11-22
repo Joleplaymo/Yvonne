@@ -195,3 +195,15 @@ function ebook_purge_downloads(PDO $db, int $olderThanDays = 365): int
     $st->execute([gmdate('Y-m-d\TH:i:s\Z', time() - $olderThanDays * 86400)]);
     return $st->rowCount();
 }
+
+// ---------------------------------------------------------------- Liens publics
+
+function ebook_order_page_url(array $o): string
+{
+    return cfg()['public_base_url'] . '/numerique/merci?ref=' . rawurlencode($o['ref']) . '&t=' . $o['token'];
+}
+
+function ebook_download_url(string $token): string
+{
+    return cfg()['public_base_url'] . '/telecharger/' . $token;
+}

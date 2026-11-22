@@ -10,7 +10,7 @@ function admin_session(): void
     if (session_status() === PHP_SESSION_ACTIVE) return;
     $https = ($_SERVER['HTTPS'] ?? '') === 'on' || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
     session_name('yv_admin');
-    session_set_cookie_params(['lifetime' => 0, 'path' => '/admin', 'secure' => $https, 'httponly' => true, 'samesite' => 'Strict']);
+    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Strict']);
     session_start();
     header('Cache-Control: no-store');
     header('X-Robots-Tag: noindex');
@@ -19,6 +19,14 @@ function admin_session(): void
 function admin_logged_in(): bool
 {
     return ($_SESSION['admin'] ?? false) === true && ($_SESSION['exp'] ?? 0) > time();
+}
+
+/** Pour les pages publiques : ne démarre la session (et ne crée aucun cookie) que si un visiteur porte déjà le cookie admin. */
+function admin_logged_in_if_cookie(): bool
+{
+    if (!isset($_COOKIE['yv_admin'])) return false;
+    admin_session();
+    return admin_logged_in();
 }
 
 function csrf_token(): string
