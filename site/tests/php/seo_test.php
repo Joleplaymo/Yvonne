@@ -49,6 +49,17 @@ seo_save($db, SEO_TITLE_DEFAULT, '', true);
 $s = seo_load($db);
 check('identique à l’original ou vide = retour à l’original', $s['title'] === SEO_TITLE_DEFAULT && $s['description'] === SEO_DESC_DEFAULT && $s['custom'] === false);
 
+// Photo choisie pour les aperçus de liens.
+$im = imagecreatetruecolor(1200, 630);
+$png = sys_get_temp_dir() . '/yv-seo-' . getmypid() . '.png';
+imagepng($im, $png);
+check('photo de partage enregistrée', photo_save('partage', ['error' => UPLOAD_ERR_OK, 'tmp_name' => $png, 'size' => filesize($png)]) === null && photo_is_custom('partage'));
+seo_save($db, SEO_TITLE_DEFAULT, '', true);
+$out = seo_apply($page, $db);
+check('og:image = photo choisie (adresse versionnée)', preg_match('#og:image" content="https://exemple.test/photo/partage\?w=960&amp;v=\d+"#', $out) === 1 && !str_contains($out, 'couverture'));
+photo_reset('partage');
+check('retrait : retour à la couverture', str_contains(seo_apply($page, $db), 'og:image" content="https://exemple.test/photo/couverture?w=960"'));
+
 seo_save($db, 'X', 'Y', false);
 seo_reset($db);
 check('rétablir', seo_load($db)['custom'] === false && seo_load($db)['image'] === true);

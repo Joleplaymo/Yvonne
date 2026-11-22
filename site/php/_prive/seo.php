@@ -5,6 +5,8 @@ declare(strict_types=1);
 // Rangés dans settings : « seo_titre », « seo_description », « seo_image » (« 0 » = pas d'image dans les aperçus).
 // Sans modification, le titre et la description du gabarit (Base.astro) restent en place.
 
+require_once __DIR__ . '/photos.php';
+
 const SEO_TITLE_DEFAULT = "Les hormones d'Yvonne — Vanessa Gandino";
 const SEO_DESC_DEFAULT = "Les hormones d'Yvonne — LE livre qui met enfin les vrais mots (et de l'humour) sur ce que les hormones nous font vivre. Par Vanessa Gandino.";
 const SEO_TITLE_MAX = 120;
@@ -56,7 +58,8 @@ function seo_apply(string $html, PDO $db): string
     $og = "<meta property=\"og:type\" content=\"website\"><meta property=\"og:locale\" content=\"fr_FR\"><meta property=\"og:site_name\" content=\"Vanessa Gandino\">"
         . "<meta property=\"og:title\" content=\"$t\"><meta property=\"og:description\" content=\"$d\"><meta property=\"og:url\" content=\"" . h($base . '/') . '">';
     if ($s['image']) {
-        $og .= '<meta property="og:image" content="' . h($base . '/photo/couverture?w=960') . '"><meta name="twitter:card" content="summary_large_image">';
+        $img = photo_is_custom('partage') ? '/photo/partage?w=960&v=' . photo_version('partage') : '/photo/couverture?w=960';
+        $og .= '<meta property="og:image" content="' . h($base . $img) . '"><meta name="twitter:card" content="summary_large_image">';
     } else {
         $og .= '<meta name="twitter:card" content="summary">';
     }

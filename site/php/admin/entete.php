@@ -17,6 +17,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     check_post();
     $part = ($_POST['part'] ?? '') === 'footer' ? 'footer' : 'header';
     $in = is_array($_POST['c'] ?? null) ? $_POST['c'] : [];
+    if (($_POST['op'] ?? '') === 'favicon') {
+        $err = favicon_save($_FILES['favicon'] ?? []);
+        $_SESSION['chrome_msg'] = ['favicon', $err ? 'error' : 'ok', $err ?? 'Favicon enregistré : visible sur le site en quelques minutes (Google met plus longtemps à le reprendre).'];
+        header('Location: /admin/entete#favicon', true, 303);
+        exit;
+    }
+    if (($_POST['op'] ?? '') === 'favicon_del') {
+        favicon_reset();
+        $_SESSION['chrome_msg'] = ['favicon', 'ok', 'Favicon d’origine rétabli.'];
+        header('Location: /admin/entete#favicon', true, 303);
+        exit;
+    }
     if (($_POST['op'] ?? '') === 'reset') {
         chrome_reset($db, $part);
         $_SESSION['chrome_msg'] = [$part, 'ok', ($part === 'header' ? 'En-tête' : 'Pied de page') . ' d’origine rétabli.'];
@@ -119,6 +131,25 @@ ob_start();
   <?php if ($header): ?>
     <form method="post" data-confirm="Revenir à l’en-tête d’origine ?" style="margin-top:12px;"><?= csrf_field() ?><input type="hidden" name="part" value="header"><input type="hidden" name="op" value="reset">
       <button class="cta outline small">Rétablir l’en-tête d’origine</button></form>
+  <?php endif ?>
+</section>
+
+<section class="panel home-sec" id="favicon">
+  <h2>Favicon (icône du site)<?= favicon_is_custom() ? ' <span class="pill payee">modifié</span>' : '' ?></h2>
+  <p>La petite icône de l’onglet du navigateur et des résultats Google. Envoyez une image <b>carrée</b> (JPEG, PNG, WebP ou GIF, 192 × 192 px ou plus ; PNG transparent possible) :
+    elle est recadrée au centre si elle ne l’est pas. Google met souvent plusieurs semaines à la reprendre.</p>
+  <?= $flashBox('favicon') ?>
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
+    <img src="<?= favicon_is_custom() ? '/favicon/192.png?v=' . favicon_version() : '/favicon.svg' ?>" width="64" height="64" alt="Favicon actuel" style="border-radius:12px;border:1px solid var(--line, #ddd);">
+    <span><?= favicon_is_custom() ? 'Favicon personnalisé' : 'Favicon d’origine (Y sur fond bleu)' ?></span>
+  </div>
+  <form method="post" enctype="multipart/form-data" class="home-form"><?= csrf_field() ?><input type="hidden" name="op" value="favicon">
+    <div class="field"><label>Nouvelle image</label><input type="file" name="favicon" accept="image/png,image/jpeg,image/webp,image/gif" required></div>
+    <button class="cta">Envoyer le favicon</button>
+  </form>
+  <?php if (favicon_is_custom()): ?>
+    <form method="post" data-confirm="Revenir au favicon d’origine ?" style="margin-top:12px;"><?= csrf_field() ?><input type="hidden" name="op" value="favicon_del">
+      <button class="cta outline small">Rétablir le favicon d’origine</button></form>
   <?php endif ?>
 </section>
 

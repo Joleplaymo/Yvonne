@@ -8,6 +8,18 @@ $db = db();
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     check_post();
+    if (($_POST['op'] ?? '') === 'share_photo') {
+        $err = photo_save('partage', $_FILES['photo'] ?? []);
+        $_SESSION['seo_msg'] = $err ?? 'Image enregistrée : elle apparaît dans les aperçus de liens (WhatsApp et Facebook gardent l’ancienne en mémoire un moment).';
+        header('Location: /admin/referencement#image', true, 303);
+        exit;
+    }
+    if (($_POST['op'] ?? '') === 'share_del') {
+        photo_reset('partage');
+        $_SESSION['seo_msg'] = 'Couverture du livre rétablie dans les aperçus de liens.';
+        header('Location: /admin/referencement#image', true, 303);
+        exit;
+    }
     if (($_POST['op'] ?? '') === 'reset') {
         seo_reset($db);
         $_SESSION['seo_msg'] = 'Titre et description d’origine rétablis.';
@@ -44,12 +56,26 @@ ob_start();
         <p class="hint">Idéal : entre 120 et 160 caractères. Une phrase qui donne envie de cliquer.</p>
       </div>
       <label class="check" style="display:flex;gap:8px;align-items:center;margin:16px 0;"><input type="checkbox" name="image" value="1"<?= $s['image'] ? ' checked' : '' ?>>
-        Montrer la couverture du livre dans les aperçus de liens (WhatsApp, Facebook…)</label>
+        Montrer une image dans les aperçus de liens (WhatsApp, Facebook…) : la couverture du livre, ou la photo choisie plus bas</label>
       <button class="cta">Enregistrer</button>
     </form>
     <?php if ($s['custom']): ?>
       <form method="post" data-confirm="Revenir au titre et à la description d’origine ?" style="margin-top:12px;"><?= csrf_field() ?><input type="hidden" name="op" value="reset">
         <button class="cta outline small">Rétablir l’original</button></form>
+    <?php endif ?>
+  </section>
+  <section class="panel" id="image">
+    <h2>Photo des aperçus de liens<?= photo_is_custom('partage') ? ' <span class="pill payee">modifiée</span>' : '' ?></h2>
+    <p class="hint">L’image affichée quand on partage le lien du site. Idéal : paysage (environ 1200 × 630 px), JPEG, PNG ou WebP. Sans photo choisie, c’est la couverture du livre.</p>
+    <img class="photo-preview" src="<?= photo_is_custom('partage') ? '/photo/partage?w=480&amp;v=' . photo_version('partage') : '/photo/couverture?w=480' ?>" alt="Image actuelle des aperçus" style="max-width:240px;height:auto;border-radius:8px;">
+    <p class="hint"><?= photo_is_custom('partage') ? 'Photo personnalisée' : 'Couverture du livre (par défaut)' ?></p>
+    <form method="post" enctype="multipart/form-data"><?= csrf_field() ?><input type="hidden" name="op" value="share_photo">
+      <div class="field"><label>Nouvelle photo</label><input type="file" name="photo" accept="image/png,image/jpeg,image/webp,image/gif" required></div>
+      <button class="cta">Envoyer la photo</button>
+    </form>
+    <?php if (photo_is_custom('partage')): ?>
+      <form method="post" data-confirm="Remettre la couverture du livre ?" style="margin-top:12px;"><?= csrf_field() ?><input type="hidden" name="op" value="share_del">
+        <button class="cta outline small">Remettre la couverture</button></form>
     <?php endif ?>
   </section>
   <section class="panel">

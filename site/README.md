@@ -57,9 +57,10 @@ site/
 
 - **En-tête / pied** (`/admin/entete`) : barre du haut (nom avec police et couleur au choix, jusqu'à 6 liens (police et couleur au choix) avec visibilité sur téléphone, lien panier, couleurs, hauteur, barre fixe ou non) et pied de page (texte et liens avec police et couleur au choix, jusqu'à 6 icônes-liens, couleurs, hauteur) sur toutes les pages publiques.
   `Base.astro` repère les deux par `<!--chrome:header-->` / `<!--chrome:footer-->` ; sans configuration enregistrée (`settings`, clés `site_entete` et `site_pied`), le gabarit d'origine reste en place.
+  Même page : **favicon** (image envoyée, recadrée au carré, rangée en PNG 48/180/192 dans `boutique-data/favicon/`, servie par `/favicon/{taille}.png` et `/favicon.ico` ; `favicon_apply` remplace le `<link rel="icon">` d'origine, `/favicon.svg`, tant qu'aucun n'est envoyé).
 - Dans l'éditeur d'accueil, chaque section, ligne, colonne et élément se replie / se déplie (boutons « Tout déplier », « Tout replier », « Sections ouvertes, détails repliés » ; l'état est retenu pendant la session).
 
-- **Référencement** (`/admin/referencement`) : titre et description de l'accueil tels que Google et les aperçus de liens (WhatsApp, Facebook…) les affichent, avec aperçu Google et compteur de caractères ; option pour montrer ou non la couverture dans les aperçus. `php/index.php` remplace `<title>` et la meta description du gabarit et ajoute les balises Open Graph (settings : `seo_titre`, `seo_description`, `seo_image`).
+- **Référencement** (`/admin/referencement`) : titre et description de l'accueil tels que Google et les aperçus de liens (WhatsApp, Facebook…) les affichent, avec aperçu Google et compteur de caractères ; option pour montrer ou non une image dans les aperçus, et photo de partage au choix (emplacement `partage` des photos, `og:image` = cette photo, sinon la couverture). `php/index.php` remplace `<title>` et la meta description du gabarit et ajoute les balises Open Graph (settings : `seo_titre`, `seo_description`, `seo_image`).
 
 ## Mise en ligne sur Hostinger (offre actuelle)
 

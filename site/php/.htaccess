@@ -50,6 +50,8 @@ RewriteRule ^admin/referencement$ admin/referencement.php [L]
 RewriteRule ^(panier|commande)$ page.php?p=$1 [L,QSA]
 RewriteRule ^admin/livraison$ admin/livraison.php [L]
 RewriteRule ^photo/([a-z0-9-]+)$ photo.php?slot=$1 [L,QSA]
+RewriteRule ^favicon/([0-9]+)\.png$ favicon.php?s=$1 [L]
+RewriteRule ^favicon\.ico$ favicon.php?s=48 [L]
 RewriteRule ^admin/(YV-[0-9]+)$ admin/commande.php?ref=$1 [L,QSA]
 
 # Pages statiques sans extension : /panier -> panier.html

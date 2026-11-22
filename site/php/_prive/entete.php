@@ -7,6 +7,7 @@ declare(strict_types=1);
 // Configurations rangées en JSON dans settings : « site_entete » et « site_pied ».
 
 require_once __DIR__ . '/accueil.php';
+require_once __DIR__ . '/favicon.php';
 
 const CHROME_HEADER_SETTING = 'site_entete';
 const CHROME_FOOTER_SETTING = 'site_pied';
@@ -253,5 +254,5 @@ function site_finish(string $html): string
     } catch (Throwable $e) {
         error_log('en-tête / pied : ' . $e->getMessage());
     }
-    return theme_inject((string) preg_replace('/<!--\/?chrome:(header|footer)-->/', '', $html));
+    return theme_inject(favicon_apply((string) preg_replace('/<!--\/?chrome:(header|footer)-->/', '', $html)));
 }

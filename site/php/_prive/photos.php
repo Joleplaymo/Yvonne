@@ -15,10 +15,10 @@ const PHOTO_WIDTHS = [480, 960];
 const PHOTO_MAX_BYTES = 15 * 1024 * 1024;
 const PHOTO_MAX_PIXELS = 40_000_000;
 
-/** Emplacements fixes (PHOTO_SLOTS) et photos des éléments de l'accueil (img-{id} : voir accueil.php). */
+/** Emplacements fixes (PHOTO_SLOTS), image des aperçus de liens (« partage » : voir seo.php) et photos des éléments de l'accueil (img-{id} : voir accueil.php). */
 function photo_slot_valid(string $slot): bool
 {
-    return isset(PHOTO_SLOTS[$slot]) || (bool) preg_match('/^img-[a-z][a-z0-9]{2,11}$/', $slot);
+    return isset(PHOTO_SLOTS[$slot]) || $slot === 'partage' || (bool) preg_match('/^img-[a-z][a-z0-9]{2,11}$/', $slot);
 }
 
 /** Date de la photo personnalisée (pour renouveler l'adresse quand elle change), 0 sinon. */
