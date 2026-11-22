@@ -9,6 +9,8 @@ const EPUB_MIMETYPE = 'application/epub+zip';
 const EPUB_OPF_NS = 'http://www.idpf.org/2007/opf';
 const EPUB_DC_NS = 'http://purl.org/dc/elements/1.1/';
 const EPUB_CONTAINER_NS = 'urn:oasis:names:tc:opendocument:xmlns:container';
+// Obfuscation de polices (IDPF, Adobe) : pas un DRM, la clé dérive de l'identifiant unique (jamais modifié ici).
+const EPUB_FONT_OBFUSCATION = ['http://www.idpf.org/2008/embedding', 'http://ns.adobe.com/pdf/enc#RC'];
 
 function epub_xml(string|false $xml): ?DOMDocument
 {
@@ -68,7 +70,12 @@ function epub_validate(string $path): array
         }
     }
     if ($zip->locateName('META-INF/encryption.xml') !== false) {
-        $res['errors'][] = 'Ce livre est chiffré (DRM ou polices obfusquées) : déposez une version sans chiffrement.';
+        $enc = epub_xml($zip->getFromName('META-INF/encryption.xml'));
+        $algs = [];
+        foreach ($enc?->getElementsByTagNameNS('http://www.w3.org/2001/04/xmlenc#', 'EncryptionMethod') ?? [] as $m) $algs[] = $m->getAttribute('Algorithm');
+        if (!$enc || array_diff($algs, EPUB_FONT_OBFUSCATION)) {
+            $res['errors'][] = 'Ce livre est chiffré (DRM) : déposez une version sans chiffrement.';
+        }
     }
     $zip->close();
     $res['ok'] = $res['errors'] === [];

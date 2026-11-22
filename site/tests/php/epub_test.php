@@ -74,13 +74,42 @@ $z->close();
 $r = epub_validate("$dir/quelconque.zip");
 check('zip quelconque refusé', !$r['ok'] && count($r['errors']) >= 2);
 
-copy("$dir/fx3.epub", "$dir/chiffre.epub");
+// Fixture + encryption.xml (une police factice par algorithme donné)
+function encrypted(string $dir, string $name, array $algorithms): string
+{
+    copy("$dir/fx3.epub", "$dir/$name.epub");
+    $z = new ZipArchive();
+    $z->open("$dir/$name.epub");
+    $data = '';
+    foreach ($algorithms as $n => $alg) {
+        $z->addFromString("OEBPS/fonts/police-$n.otf", random_bytes(2048));
+        $data .= "<enc:EncryptedData><enc:EncryptionMethod Algorithm=\"$alg\"/><enc:CipherData><enc:CipherReference URI=\"OEBPS/fonts/police-$n.otf\"/></enc:CipherData></enc:EncryptedData>";
+    }
+    $z->addFromString('META-INF/encryption.xml', '<?xml version="1.0" encoding="UTF-8"?><encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container" xmlns:enc="http://www.w3.org/2001/04/xmlenc#">' . $data . '</encryption>');
+    $z->close();
+    return "$dir/$name.epub";
+}
+$obf = encrypted($dir, 'obfusque', ['http://www.idpf.org/2008/embedding', 'http://ns.adobe.com/pdf/enc#RC']);
+$r = epub_validate($obf);
+$wmOk = !throws(fn() => epub_watermark($obf, "$dir/obfusque-out.epub", $buyer, $secret));
 $z = new ZipArchive();
-$z->open("$dir/chiffre.epub");
-$z->addFromString('META-INF/encryption.xml', '<encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container"/>');
+$z->open("$dir/obfusque-out.epub");
+$m = new ZipArchive();
+$m->open($obf);
+check('epub avec polices obfusquées accepté', $r['ok'] && $r['errors'] === [] && $wmOk
+    && $z->getFromName('META-INF/encryption.xml') === $m->getFromName('META-INF/encryption.xml')
+    && $z->getFromName('OEBPS/fonts/police-0.otf') === $m->getFromName('OEBPS/fonts/police-0.otf')
+    && $z->getFromName('OEBPS/fonts/police-1.otf') === $m->getFromName('OEBPS/fonts/police-1.otf'));
 $z->close();
-$r = epub_validate("$dir/chiffre.epub");
-check('epub chiffré refusé', !$r['ok'] && count($r['errors']) === 1);
+$m->close();
+$r = epub_validate(encrypted($dir, 'chiffre', ['http://www.idpf.org/2008/embedding', 'http://www.w3.org/2001/04/xmlenc#aes128-cbc']));
+check('epub chiffré (autre algorithme) refusé', !$r['ok'] && count($r['errors']) === 1 && str_contains($r['errors'][0], 'chiffré'));
+copy("$dir/fx3.epub", "$dir/illisible.epub");
+$z = new ZipArchive();
+$z->open("$dir/illisible.epub");
+$z->addFromString('META-INF/encryption.xml', 'pas du xml');
+$z->close();
+check('epub chiffré (encryption.xml illisible) refusé', !epub_validate("$dir/illisible.epub")['ok']);
 check('tatouage : maître invalide refusé', throws(fn() => epub_watermark("$dir/chiffre.epub", "$dir/x.epub", $buyer, $secret)));
 check('tatouage : maître absent refusé', throws(fn() => epub_watermark("$dir/absent.epub", "$dir/x.epub", $buyer, $secret)));
 
@@ -125,6 +154,20 @@ foreach ([3, 2] as $v) {
     }
     check("tatouage : marque cachée (epub $v)", $marked && count($w['spine']) === 4);
     check("tatouage : nav/ncx sans marque (epub $v)", !str_contains((string) $w['zip']->getFromName($w['dir'] . ($v === 3 ? 'nav.xhtml' : 'toc.ncx')), 'yv:'));
+    // La clé d'obfuscation des polices dérive de l'identifiant unique : il ne doit jamais changer.
+    $m = new ZipArchive();
+    $m->open("$dir/wm$v-master.epub");
+    $uid = function (DOMDocument $opf): string {
+        $id = $opf->documentElement->getAttribute('unique-identifier');
+        foreach ($opf->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'identifier') as $el) {
+            if ($el->getAttribute('id') === $id) return $el->C14N();
+        }
+        return '';
+    };
+    $masterUid = $uid(xml_ok($m->getFromName('OEBPS/content.opf')));
+    check("tatouage : identifiant unique inchangé (epub $v)", $masterUid !== '' && $uid($w['opf']) === $masterUid
+        && $w['opf']->getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'identifier')->length === 1);
+    $m->close();
     $w['zip']->close();
 }
 
