@@ -5,11 +5,17 @@ require_once __DIR__ . '/_prive/telechargement.php';
 require_once __DIR__ . '/_prive/mail.php';
 
 // Le jeton est dans l'URL : aucune page de cette route ne doit être mise en cache ni fuiter en Referer.
-function dl_page(int $status, string $title, string $text): never
+function dl_page(int $status, string $title, string $text, string $extra = ''): never
 {
     header('Cache-Control: no-store');
     header('Referrer-Policy: no-referrer');
-    render_page($title, '<h1 style="font-size:40px;">' . h($title) . '</h1><p class="lead">' . $text . '</p>', 'gabarit', $status);
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') { // mêmes en-têtes que le GET, sans corps
+        http_response_code($status);
+        header('Content-Type: text/html; charset=utf-8');
+        header('X-Robots-Tag: noindex');
+        exit;
+    }
+    render_page($title, '<h1 style="font-size:40px;">' . h($title) . '</h1><p class="lead">' . $text . '</p>' . $extra, 'gabarit', $status);
 }
 
 function dl_not_valid(): never
@@ -22,8 +28,26 @@ if (rate_limited($db, 'dl:' . client_ip(), 20, 3600)) {
     dl_page(429, 'Trop de tentatives', 'Veuillez réessayer dans un moment.');
 }
 
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+if (!in_array($method, ['GET', 'HEAD', 'POST'], true)) {
+    header('Allow: GET, HEAD, POST');
+    dl_page(405, 'Méthode non autorisée', 'Cette adresse ne répond qu\'à une ouverture normale.');
+}
+
 $token = (string) ($_GET['j'] ?? '');
 if (preg_match('/^[A-Za-z0-9_-]{43}$/', $token) !== 1) dl_not_valid();
+
+// GET et HEAD (aperçus de liens, scanners de courrier compris) ne comptent jamais : seul le POST du bouton télécharge.
+if ($method !== 'POST') {
+    $peek = ebook_peek_download($db, $token);
+    if ($peek === null) dl_not_valid();
+    $left = (int) $peek['dl_max'] - (int) $peek['dl_count'];
+    $until = fr_date((string) $peek['dl_expires_at'], true);
+    dl_page(200, 'Votre livre numérique est prêt',
+        'Commande ' . h($peek['ref']) . '. Il vous reste ' . $left . ' téléchargement' . ($left > 1 ? 's' : '') . ', jusqu\'au ' . h($until) . '.',
+        '<form method="post" action="' . h('/telecharger/' . $token) . '"><button class="cta terra" type="submit">Télécharger le livre (epub)</button></form>'
+        . '<p class="hint">Le fichier est marqué à votre nom, merci de ne pas le partager.</p>');
+}
 
 if (!is_file(ebook_master_path())) {
     error_log('telecharger: epub maître absent (' . ebook_master_path() . ')');

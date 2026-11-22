@@ -40,7 +40,7 @@ function ebook_form_page(PDO $db, array $values, array $errors, int $status = 20
       </label>
       <?= $err('consent') ?>
     </div>
-    <?php if ($cgv !== ''): ?><p class="hint">Voir les <a href="<?= h($cgv) ?>" target="_blank" rel="noopener">conditions générales de vente</a>.</p><?php endif ?>
+    <?php if ($cgv !== ''): ?><p class="hint">En commandant, vous acceptez les conditions générales de vente. <a href="<?= h($cgv) ?>" target="_blank" rel="noopener">Lire les conditions générales de vente</a>.</p><?php endif ?>
     <?php if ($preview !== ''): ?><input type="hidden" name="apercu" value="<?= h($preview) ?>" /><?php endif ?>
     <div class="hp" aria-hidden="true"><label for="website">Ne pas remplir</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
     <button class="cta terra" type="submit" style="width:100%; margin-top:22px;">Commander le livre numérique — <?= h($price) ?></button>

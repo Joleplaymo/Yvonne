@@ -77,6 +77,24 @@ ebook_set_status($db, 'EB-0001', 'attente_paiement');
 check('rouvrir : hash effacé', find_ebook_order($db, 'EB-0001')['dl_token_hash'] === null
     && ebook_consume_download($db, $tok3, '203.0.113.1', 'ua') === null);
 
+// --- Aperçu sans comptage
+$tokP = ebook_deliver($db, 'EB-0001');
+$logBefore = count(ebook_downloads_of($db, 1));
+$peek = ebook_peek_download($db, $tokP);
+$peek2 = ebook_peek_download($db, $tokP);
+check('peek : ne compte pas', $peek !== null && $peek['ref'] === 'EB-0001' && $peek2 !== null
+    && find_ebook_order($db, 'EB-0001')['dl_count'] === 0 && count(ebook_downloads_of($db, 1)) === $logBefore);
+check('peek : jeton inconnu refusé', ebook_peek_download($db, str_repeat('a', 43)) === null);
+$db->exec("UPDATE ebook_orders SET dl_count = dl_max");
+$exhausted = ebook_peek_download($db, $tokP) === null;
+$db->exec("UPDATE ebook_orders SET dl_count = 0, dl_expires_at = '2000-01-01T00:00:00Z'");
+$expired = ebook_peek_download($db, $tokP) === null;
+$db->exec("UPDATE ebook_orders SET dl_expires_at = '2999-01-01T00:00:00Z', status = 'attente_paiement'");
+$unpaid = ebook_peek_download($db, $tokP) === null;
+$db->exec("UPDATE ebook_orders SET status = 'annulee'");
+$cancelled = ebook_peek_download($db, $tokP) === null;
+check('peek : refusé si épuisé/expiré/non livré', $exhausted && $expired && $unpaid && $cancelled);
+
 // --- IP distinctes et alerte
 $db->exec("DELETE FROM ebook_downloads");
 $tok4 = ebook_deliver($db, 'EB-0001');

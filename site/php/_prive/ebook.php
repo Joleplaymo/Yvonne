@@ -47,8 +47,9 @@ function ebook_secret(PDO $db): string
 {
     $s = get_setting($db, 'ebook_secret');
     if ($s === null || $s === '') {
-        $s = bin2hex(random_bytes(32));
-        set_setting($db, 'ebook_secret', $s);
+        $db->prepare('INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, ?)')
+            ->execute(['ebook_secret', bin2hex(random_bytes(32)), now_iso()]);
+        $s = (string) get_setting($db, 'ebook_secret');
     }
     return $s;
 }
@@ -145,6 +146,15 @@ function ebook_set_admin_note(PDO $db, string $ref, string $note): void
 }
 
 // ---------------------------------------------------------------- Téléchargements
+
+/** Lit la commande d'un lien valide SANS rien modifier ni compter (page d'accueil du lien) ; null si inconnu, expiré, épuisé ou non livré. */
+function ebook_peek_download(PDO $db, string $token): ?array
+{
+    $st = $db->prepare("SELECT * FROM ebook_orders
+        WHERE dl_token_hash = ? AND status = 'livree' AND dl_count < dl_max AND dl_expires_at > ?");
+    $st->execute([hash('sha256', $token), now_iso()]);
+    return $st->fetch() ?: null;
+}
 
 /** Autorise et compte un téléchargement ; null si le jeton est inconnu, expiré, épuisé ou la commande non livrée. */
 function ebook_consume_download(PDO $db, string $token, string $ip, string $ua): ?array

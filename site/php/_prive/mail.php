@@ -181,7 +181,8 @@ function mail_ebook_created(array $o): void
     send_mail($o['email'], "Votre commande {$o['ref']} — Les hormones d'Yvonne (livre numérique)", "Bonjour {$o['first_name']},
 
 Merci pour votre commande du livre numérique « Les hormones d'Yvonne » (format .epub) !
-Votre lien de téléchargement vous sera envoyé par e-mail dès que j'aurai reçu votre paiement (sous 24 h).
+Votre lien de téléchargement sera envoyé à {$o['email']} dès que j'aurai reçu votre paiement (sous 24 h).
+Adresse erronée ? Répondez à ce message en indiquant la référence {$o['ref']}.
 
 Commande {$o['ref']} — $price
 
@@ -211,7 +212,7 @@ function mail_ebook_delivered(array $o, string $token): bool
 {
     return send_mail($o['email'], "Votre livre numérique est prêt — commande {$o['ref']}", "Bonjour {$o['first_name']},
 
-Votre paiement est bien arrivé, merci ! Voici votre lien de téléchargement :
+Votre paiement est bien arrivé, merci ! Voici votre lien (il ouvre une page avec un bouton « Télécharger le livre ») :
 " . ebook_download_url($token) . "
 
 Ce lien est personnel : il est valable " . EBOOK_DL_DAYS . " jours et permet " . EBOOK_DL_MAX . " téléchargements.

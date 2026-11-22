@@ -42,7 +42,7 @@ imagepng($im, $png);
 check('enregistrement PNG', favicon_save(upload($png)) === null && favicon_is_custom());
 foreach (FAVICON_SIZES as $s) {
     $size = @getimagesize((string) favicon_file($s));
-    check("taille $s×$s", $size !== false && $size[0] === $s && $size[1] === $s && $size['mime'] === 'image/png');
+    check("taille {$s}×{$s}", $size !== false && $size[0] === $s && $size[1] === $s && $size['mime'] === 'image/png');
 }
 check('taille inconnue', favicon_file(64) === null);
 

@@ -46,6 +46,7 @@ ob_start();
         <a class="cta terra" href="<?= h($pay) ?>" target="_blank" rel="noopener">Payer <?= h($price) ?> avec Revolut</a>
         <button class="cta outline" type="button" data-copy="<?= h($o['ref']) ?>"><i data-icon="copy"></i> <span>Copier la référence</span></button>
       </div>
+      <p class="hint">Votre lien de téléchargement sera envoyé à <strong><?= h($o['email']) ?></strong>. Adresse erronée ? Écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a> en indiquant la référence <?= h($o['ref']) ?>.</p>
       <p class="hint">Un souci pour payer ? <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a></p>
     </div>
     <aside class="panel">

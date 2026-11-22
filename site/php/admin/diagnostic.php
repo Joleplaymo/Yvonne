@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// TEMPORAIRE (supprimé à la tâche 7) : repérer l'en-tête qui porte la vraie IP du visiteur derrière le CDN.
+// TEMPORAIRE (à supprimer après usage, voir README « Diagnostic IP ») : repérer l'en-tête qui porte la vraie IP du visiteur derrière le CDN.
 require __DIR__ . '/../_prive/admin.php';
 
 require_admin();

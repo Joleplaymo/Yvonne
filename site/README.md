@@ -71,16 +71,17 @@ Tout se règle dans **`/admin/epub`** :
 
 - **Déposer le fichier** : envoyer l'epub de référence (le « master »). Il est rangé dans `boutique-data/`, hors du site web. Chaque client reçoit une copie tatouée à son nom (nom et e-mail cachés dans le fichier) ; le master n'est jamais servi tel quel.
 - **Prix** : 4,99 € par défaut, modifiable.
-- **CGV** : l'adresse de la page des conditions de vente, affichée et acceptée (case à cocher) avant toute commande. Le consentement (date, case cochée) est conservé avec la commande.
+- **CGV** : l'adresse de la page des conditions de vente, affichée sous le formulaire avec la mention « En commandant, vous acceptez les conditions générales de vente ». Seule la case de renonciation au droit de rétractation est à cocher ; son consentement (texte, date, IP) est conservé avec la commande.
 - **Lien d'aperçu et commande test** : tant que la vente est fermée, `/numerique?apercu=<clé>` (lien affiché dans `/admin/epub`) montre la page et permet de passer une vraie commande pour tout tester. **Tester le tatouage** produit un epub d'essai à ouvrir sur une liseuse.
-- **Ouvrir la vente** : interrupteur. La vente ne s'ouvre que si le fichier est déposé. Le bouton « Version numérique » apparaît alors sur l'accueil.
+- **Ouvrir la vente** : interrupteur. La vente ne s'ouvre que si le fichier est déposé. Le bouton « Version numérique » apparaît alors dans la section du haut (le hero) de l'accueil par défaut.
 
 ### Au quotidien
 
+- **Le lien** ouvre une page « Votre livre numérique est prêt » avec un bouton ; seul le clic sur ce bouton compte un téléchargement (les aperçus de liens et scanners de courrier, qui ne font que lire la page, ne comptent pas).
 - **Valider un paiement** : paiement reçu sur Revolut → `/admin/EB-xxxx` → **Paiement reçu — envoyer le lien**. Le client reçoit un mail avec son lien (valable 7 jours, 5 téléchargements).
 - **Renvoyer un lien** : sur la fiche, **Renvoyer un nouveau lien** (l'ancien cesse de marcher). À utiliser aussi si le client dit ne pas avoir reçu le mail, ou si son lien est expiré ou épuisé (le client voit « Lien invalide ou expiré » et est invité à écrire).
 - **Le mail n'est pas parti** : la fiche affiche « l'e-mail n'a pas pu être envoyé » (la commande est quand même livrée). Vérifier `smtp_password`, puis **Renvoyer un nouveau lien**.
-- **Annuler / Rouvrir** une commande, et une **note** privée par commande.
+- **Annuler / Réactiver** une commande (« Réactiver (en attente de paiement) » révoque le lien), et une **note** privée par commande.
 - **Alerte de partage** : si un même lien est téléchargé depuis beaucoup d'adresses IP différentes, vous recevez un mail d'alerte (une seule fois par commande). Un lien partagé se coupe en renvoyant un nouveau lien.
 - **Export CSV** : `/admin/export-numerique.csv` (Excel FR), à garder pour la comptabilité.
 
@@ -99,7 +100,8 @@ Derrière le CDN de Hostinger, `REMOTE_ADDR` n'est pas l'IP du visiteur. Pour tr
 1. Connecté à `/admin`, ouvrir `/admin/diagnostic` **depuis un téléphone en 4G** (pas le wifi).
 2. Repérer la ligne qui contient votre IP publique (par ex. `HTTP_X_REAL_IP`). Ce doit être un en-tête à une seule valeur posé par le CDN, **jamais** `HTTP_X_FORWARDED_FOR` (le visiteur peut en choisir la première valeur).
 3. Mettre cette clé dans `client_ip_header` de `boutique-data/config.php`, puis rouvrir `/admin/diagnostic` : `client_ip()` doit afficher votre IP.
-4. **Supprimer ensuite `php/admin/diagnostic.php` et la ligne `admin/diagnostic` de `php/.htaccess`**, puis republier.
+4. **Vérifier que le CDN écrase un en-tête falsifié** : toujours connecté en admin, rouvrir `/admin/diagnostic` avec un en-tête forgé, par ex. `curl -H 'X-Real-IP: 1.2.3.4' -b <cookie> https://…/admin/diagnostic` (ou une extension de navigateur). Si la valeur forgée apparaît telle quelle, ne configurez pas `client_ip_header` avec cet en-tête.
+5. **Supprimer ensuite `php/admin/diagnostic.php` et la ligne `admin/diagnostic` de `php/.htaccess`**, puis republier.
 
 ## Mise en ligne sur Hostinger (offre actuelle)
 
@@ -154,6 +156,6 @@ Les tests tournent pendant le build. Sauvegarde : `./scripts/backup.sh` (cron co
 - [ ] Diagnostic IP fait, puis `diagnostic.php` supprimé (voir plus haut).
 - [ ] Ouvrir l'epub tatoué (« Tester le tatouage ») avec `epubcheck`, ou dans Calibre, Apple Books et Kobo.
 - [ ] Commande réelle à 4,99 € via le lien d'aperçu, jusqu'à la réception du mail et du fichier.
-- [ ] Depuis l'extérieur : `curl -sI https://<site>/telecharger/<jeton>` doit montrer `Cache-Control: private, no-store` (qui doit survivre au CDN : une 2e requête ne doit pas venir du cache), `Referrer-Policy` et `Strict-Transport-Security`.
+- [ ] Depuis l'extérieur : `curl -sI https://<site>/telecharger/<jeton>` (HEAD, ne compte jamais) doit montrer pour la page `Cache-Control: no-store` (qui doit survivre au CDN : une 2e requête ne doit pas venir du cache), `X-Robots-Tag`, `Referrer-Policy` et `Strict-Transport-Security`. Pour les en-têtes du fichier (`application/epub+zip`, `Content-Disposition`, `Cache-Control: private, no-store, max-age=0`), faire un vrai téléchargement depuis un navigateur, ou `curl -s -D- -o /dev/null -X POST https://<site>/telecharger/<jeton>` : cela compte 1 téléchargement.
 - [ ] CGV en ligne et adresse renseignée dans `/admin/epub`.
 - [ ] Statut TVA vérifié (franchise en base ou TVA à facturer sur le numérique).
