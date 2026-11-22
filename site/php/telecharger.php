@@ -1,0 +1,90 @@
+<?php
+declare(strict_types=1);
+require __DIR__ . '/_prive/lib.php';
+require_once __DIR__ . '/_prive/telechargement.php';
+require_once __DIR__ . '/_prive/mail.php';
+
+// Le jeton est dans l'URL : aucune page de cette route ne doit être mise en cache ni fuiter en Referer.
+function dl_page(int $status, string $title, string $text, string $extra = ''): never
+{
+    header('Cache-Control: no-store');
+    header('Referrer-Policy: no-referrer');
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') { // mêmes en-têtes que le GET, sans corps
+        http_response_code($status);
+        header('Content-Type: text/html; charset=utf-8');
+        header('X-Robots-Tag: noindex');
+        exit;
+    }
+    render_page($title, '<h1 style="font-size:40px;">' . h($title) . '</h1><p class="lead">' . $text . '</p>' . $extra, 'gabarit', $status);
+}
+
+function dl_not_valid(): never
+{
+    dl_page(404, 'Lien invalide ou expiré', 'Ce lien n\'est plus valide. Écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a> pour en recevoir un nouveau.');
+}
+
+$db = db();
+if (rate_limited($db, 'dl:' . client_ip(), 20, 3600)) {
+    dl_page(429, 'Trop de tentatives', 'Veuillez réessayer dans un moment.');
+}
+
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+if (!in_array($method, ['GET', 'HEAD', 'POST'], true)) {
+    header('Allow: GET, HEAD, POST');
+    dl_page(405, 'Méthode non autorisée', 'Cette adresse ne répond qu\'à une ouverture normale.');
+}
+
+$token = (string) ($_GET['j'] ?? '');
+if (preg_match('/^[A-Za-z0-9_-]{43}$/', $token) !== 1) dl_not_valid();
+
+// GET et HEAD (aperçus de liens, scanners de courrier compris) ne comptent jamais : seul le POST du bouton télécharge.
+if ($method !== 'POST') {
+    $peek = ebook_peek_download($db, $token);
+    if ($peek === null) dl_not_valid();
+    $left = (int) $peek['dl_max'] - (int) $peek['dl_count'];
+    $until = fr_date((string) $peek['dl_expires_at'], true);
+    dl_page(200, 'Votre livre numérique est prêt',
+        'Commande ' . h($peek['ref']) . '. Il vous reste ' . $left . ' téléchargement' . ($left > 1 ? 's' : '') . ', jusqu\'au ' . h($until) . '.',
+        '<form method="post" action="' . h('/telecharger/' . $token) . '"><button class="cta terra" type="submit">Télécharger le livre (epub)</button></form>'
+        . '<p class="hint">Le fichier est marqué à votre nom, merci de ne pas le partager.</p>');
+}
+
+if (!is_file(ebook_master_path())) {
+    error_log('telecharger: epub maître absent (' . ebook_master_path() . ')');
+    dl_page(503, 'Téléchargement momentanément indisponible', 'Réessayez dans quelques minutes, ou écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a>.');
+}
+
+$order = ebook_consume_download($db, $token, client_ip(), (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+if ($order === null) dl_not_valid();
+
+// Préparation : un échec ici survient avant tout octet envoyé, le téléchargement compté est rendu.
+$tmp = null;
+try {
+    $tmp = ebook_build_copy($db, $order, ebook_tmp_dir());
+    $size = filesize($tmp);
+    if ($size === false) throw new RuntimeException('Taille illisible.');
+} catch (Throwable $e) {
+    error_log('telecharger ' . $order['ref'] . ': ' . $e->getMessage());
+    if ($tmp !== null) @unlink($tmp); // exit (dl_page) ne passe pas par finally
+    try {
+        ebook_refund_download($db, (int) $order['id']);
+    } catch (Throwable $e2) {
+        error_log('telecharger remboursement ' . $order['ref'] . ': ' . $e2->getMessage());
+    }
+    dl_page(500, 'Une erreur est survenue', 'Le téléchargement n\'a pas pu être préparé. Votre lien reste utilisable : réessayez dans un moment, ou écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a>.');
+}
+
+// Envoi : pas de remboursement ici, les en-têtes sont partis.
+try {
+    if (!ebook_send_epub($tmp, $size)) error_log('telecharger ' . $order['ref'] . ': lecture impossible');
+} finally {
+    @unlink($tmp);
+}
+
+// Alerte de partage après l'envoi ; un échec d'e-mail ne doit rien casser.
+try {
+    $ips = ebook_distinct_ips($db, (int) $order['id']);
+    if ($ips > EBOOK_ALERT_IPS && ebook_mark_alert_sent($db, (int) $order['id'])) mail_ebook_share_alert($order, $ips);
+} catch (Throwable $e) {
+    error_log('telecharger alerte: ' . $e->getMessage());
+}

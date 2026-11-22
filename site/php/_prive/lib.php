@@ -24,9 +24,24 @@ function default_data_dir(): string
     return $base . '/boutique-data';
 }
 
+/** Cache de cfg() partagé par référence (permet cfg_override() dans les tests). */
+function &cfg_cache(): ?array
+{
+    static $cache = null;
+    return $cache;
+}
+
+/** Réservé aux tests : fusionne des valeurs dans la configuration en cache. */
+function cfg_override(array $values): void
+{
+    cfg();
+    $cache = &cfg_cache();
+    $cache = array_merge($cache, $values);
+}
+
 function cfg(): array
 {
-    static $cfg = null;
+    $cfg = &cfg_cache();
     if ($cfg !== null) return $cfg;
 
     $env = static function (string $key, $default) {
@@ -42,6 +57,7 @@ function cfg(): array
         'public_base_url' => (string) $env('PUBLIC_BASE_URL', ''),
         'data_dir' => (string) $env('DATA_DIR', default_data_dir()),
         'trust_proxy' => (bool) $env('TRUST_PROXY', false),
+        'client_ip_header' => (string) $env('CLIENT_IP_HEADER', ''),
         'mail_mode' => (string) $env('MAIL_MODE', 'log'),
         'smtp_host' => (string) $env('SMTP_HOST', ''),
         'smtp_port' => (int) $env('SMTP_PORT', 465),
@@ -250,7 +266,28 @@ function db(?string $file = null): PDO
         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS hits (key TEXT NOT NULL, at INTEGER NOT NULL);
         CREATE INDEX IF NOT EXISTS hits_key ON hits(key, at);
+        CREATE TABLE IF NOT EXISTS ebook_orders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ref TEXT NOT NULL UNIQUE,
+          token TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+          status TEXT NOT NULL DEFAULT 'attente_paiement',
+          price_cents INTEGER NOT NULL,
+          first_name TEXT NOT NULL, last_name TEXT NOT NULL, email TEXT NOT NULL,
+          consent_text TEXT NOT NULL, consent_at TEXT NOT NULL, consent_ip TEXT NOT NULL,
+          paid_at TEXT, admin_note TEXT NOT NULL DEFAULT '',
+          dl_token_hash TEXT UNIQUE, dl_expires_at TEXT,
+          dl_count INTEGER NOT NULL DEFAULT 0, dl_max INTEGER NOT NULL DEFAULT 5,
+          alert_sent_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS ebook_orders_status ON ebook_orders(status);
+        CREATE TABLE IF NOT EXISTS ebook_downloads (
+          order_id INTEGER NOT NULL, at TEXT NOT NULL, ip TEXT NOT NULL, user_agent TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ebook_downloads_order ON ebook_downloads(order_id);
+        CREATE INDEX IF NOT EXISTS ebook_downloads_at ON ebook_downloads(at);
         SQL);
+    if ($isDefault) foreach (['', '-wal', '-shm'] as $suffix) secure_file($file . $suffix);
     if ($isDefault) $pdo = $conn;
     return $conn;
 }
@@ -264,6 +301,15 @@ function ensure_private_dir(string $dir): void
     if (!is_file("$dir/.htaccess")) {
         @file_put_contents("$dir/.htaccess", "Require all denied\nDeny from all\n");
     }
+    foreach (['config.php', 'commandes.sqlite', 'commandes.sqlite-wal', 'commandes.sqlite-shm'] as $f) {
+        secure_file("$dir/$f");
+    }
+}
+
+/** Réserve un fichier privé à son propriétaire (0600) ; silencieux s'il n'existe pas. */
+function secure_file(string $path): void
+{
+    if (is_file($path)) @chmod($path, 0600);
 }
 
 function now_iso(): string
@@ -372,6 +418,11 @@ function rate_limited(PDO $db, string $key, int $max, int $windowSec): bool
 
 function client_ip(): string
 {
+    $header = cfg()['client_ip_header'];
+    if ($header !== '' && !empty($_SERVER[$header])) {
+        $first = trim(explode(',', (string) $_SERVER[$header])[0]);
+        if (filter_var($first, FILTER_VALIDATE_IP) !== false) return $first;
+    }
     if (cfg()['trust_proxy'] && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
         $parts = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
         return trim(end($parts));

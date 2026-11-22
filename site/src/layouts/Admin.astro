@@ -25,6 +25,7 @@ const { title } = Astro.props;
       <a href="/admin/textes">textes</a>
       <a href="/admin/couleurs">couleurs</a>
       <a href="/admin/photos">photos</a>
+      <a href="/admin/epub">livre numérique</a>
       <a href="/admin/export.csv">export CSV</a>
       <a href="/" target="_blank">voir le site</a>
       <a href="/admin/deconnexion">déconnexion</a>
@@ -45,6 +46,7 @@ const { title } = Astro.props;
   .admin .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 800; white-space: nowrap; }
   .pill.attente_paiement { background: #fde8c8; color: #7a4a00; }
   .pill.payee { background: var(--olive); color: var(--cream); }
+  .pill.livree { background: var(--olive); color: var(--cream); }
   .pill.expediee { background: var(--navy); color: var(--cream); }
   .pill.annulee { background: #ddd; color: #555; }
   .admin .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }

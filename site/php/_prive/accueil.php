@@ -13,6 +13,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/couleurs.php';
 require_once __DIR__ . '/textes.php';
 require_once __DIR__ . '/photos.php';
+require_once __DIR__ . '/ebook.php';
 
 const HOME_SETTING = 'accueil_mise_en_page';
 const HOME_LIMITS = ['sections' => 40, 'rows' => 12, 'cols' => 6, 'els' => 15];
@@ -278,7 +279,7 @@ function home_layout(PDO $db, ?array $texts = null): array
             return $list;
         }
     }
-    return home_default_layout($texts ?? text_overrides($db));
+    return home_default_layout($texts ?? text_overrides($db), ebook_sale_open($db));
 }
 
 function home_layout_custom(PDO $db): bool
@@ -319,7 +320,7 @@ function home_section_slots(array $section): array
 // ------------------------------------------------------------------ Page d'origine
 
 /** La page d'accueil telle qu'elle était avant l'éditeur, avec les textes de /admin/textes. */
-function home_default_layout(array $texts = []): array
+function home_default_layout(array $texts = [], bool $ebook = false): array
 {
     $t = fn(string $k) => $texts[$k] ?? (text_items()[$k]['default'] ?? '');
     $n = 0;
@@ -339,7 +340,8 @@ function home_default_layout(array $texts = []): array
                 $col(5, [
                     $heading('hero_titre', ['level' => 'h1', 'size' => '82', 'big' => '1', 'mt' => '0']),
                     $text('hero_accroche', ['size' => '20', 'maxw' => '34ch', 'mt' => '30']),
-                    $el('buttons', ['b1_label' => $t('bouton_principal'), 'b1_url' => $buy, 'b2_label' => $t('bouton_extrait'), 'b2_url' => '#extrait', 'b2_style' => 'outline', 'mt' => '34']),
+                    $el('buttons', ['b1_label' => $t('bouton_principal'), 'b1_url' => $buy, 'b2_label' => $t('bouton_extrait'), 'b2_url' => '#extrait', 'b2_style' => 'outline', 'mt' => '34']
+                        + ($ebook ? ['b3_label' => 'Version numérique', 'b3_url' => '/numerique', 'b3_style' => 'outline'] : [])),
                 ]),
                 $col(3, [$el('image', ['slot' => 'couverture', 'alt' => "Couverture du livre Les hormones d'Yvonne", 'ratio' => '2/3', 'radius' => '0', 'shadow' => 'strong', 'mt' => '0'])]),
             ], ['gap' => 56, 'valign' => 'center']),
