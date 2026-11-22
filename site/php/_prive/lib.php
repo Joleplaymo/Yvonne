@@ -266,7 +266,28 @@ function db(?string $file = null): PDO
         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS hits (key TEXT NOT NULL, at INTEGER NOT NULL);
         CREATE INDEX IF NOT EXISTS hits_key ON hits(key, at);
+        CREATE TABLE IF NOT EXISTS ebook_orders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ref TEXT NOT NULL UNIQUE,
+          token TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+          status TEXT NOT NULL DEFAULT 'attente_paiement',
+          price_cents INTEGER NOT NULL,
+          first_name TEXT NOT NULL, last_name TEXT NOT NULL, email TEXT NOT NULL,
+          consent_text TEXT NOT NULL, consent_at TEXT NOT NULL, consent_ip TEXT NOT NULL,
+          paid_at TEXT, admin_note TEXT NOT NULL DEFAULT '',
+          dl_token_hash TEXT UNIQUE, dl_expires_at TEXT,
+          dl_count INTEGER NOT NULL DEFAULT 0, dl_max INTEGER NOT NULL DEFAULT 5,
+          alert_sent_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS ebook_orders_status ON ebook_orders(status);
+        CREATE TABLE IF NOT EXISTS ebook_downloads (
+          order_id INTEGER NOT NULL, at TEXT NOT NULL, ip TEXT NOT NULL, user_agent TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ebook_downloads_order ON ebook_downloads(order_id);
+        CREATE INDEX IF NOT EXISTS ebook_downloads_at ON ebook_downloads(at);
         SQL);
+    if ($isDefault) foreach (['', '-wal', '-shm'] as $suffix) secure_file($file . $suffix);
     if ($isDefault) $pdo = $conn;
     return $conn;
 }
