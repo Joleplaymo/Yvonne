@@ -20,6 +20,13 @@ return [
     // --- Site ---
     'public_base_url' => 'https://leshormonesdyvonne.vanessagandino.fr',
 
+    // --- Réseau (CDN / proxy) ---
+    // Clé $_SERVER contenant la vraie IP du visiteur (ex. 'HTTP_X_REAL_IP'). Vide = REMOTE_ADDR.
+    // Repérer la bonne clé avec /admin/diagnostic depuis un téléphone en 4G.
+    'client_ip_header' => '',
+    // true = faire confiance au dernier élément de X-Forwarded-For (si client_ip_header est vide).
+    'trust_proxy' => false,
+
     // --- E-mails ---
     // 'smtp' (recommandé) | 'mail' (fonction mail() de l'hébergeur) | 'log' (aucun envoi, journal PHP)
     'mail_mode' => 'smtp',

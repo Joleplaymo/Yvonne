@@ -92,6 +92,23 @@ check('date de modification', setting_updated_at($db, 'shipping_table') !== null
 delete_setting($db, 'shipping_table');
 check('suppression → retour config', shipping_table_source($db) === cfg()['shipping_table']);
 
+// --- IP client derrière le CDN
+$_SERVER['REMOTE_ADDR'] = '10.0.0.1';
+cfg_override(['client_ip_header' => 'HTTP_X_REAL_IP']);
+$_SERVER['HTTP_X_REAL_IP'] = '203.0.113.7';
+check('client_ip : en-tête configuré prioritaire', client_ip() === '203.0.113.7');
+$_SERVER['HTTP_X_REAL_IP'] = 'pas-une-ip';
+check('client_ip : en-tête invalide ignoré', client_ip() === '10.0.0.1');
+cfg_override(['client_ip_header' => '']);
+unset($_SERVER['HTTP_X_REAL_IP']);
+$tmpSecret = sys_get_temp_dir() . '/yv-secure-' . getmypid();
+file_put_contents($tmpSecret, 'x');
+chmod($tmpSecret, 0644);
+secure_file($tmpSecret);
+check('secure_file : 0600', (fileperms($tmpSecret) & 0777) === 0600);
+unlink($tmpSecret);
+secure_file($tmpSecret); // fichier absent : silencieux
+
 check('échappement HTML', h('<a href="x">&') === '&lt;a href=&quot;x&quot;&gt;&amp;');
 
 echo $fails ? "\n$fails/$count test(s) en échec\n" : "$count tests PHP OK\n";
