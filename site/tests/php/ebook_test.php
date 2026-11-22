@@ -145,6 +145,19 @@ check('aperçu : clé valide acceptée', preg_match('/^[0-9a-f]{64}$/', $pk) ===
 check('aperçu : clé vide/fausse refusée', !ebook_preview_allowed($db, '') && !ebook_preview_allowed($db, str_repeat('0', 64)) && !ebook_preview_allowed($db, $pk . 'x'));
 check('aperçu : clé stable', ebook_preview_key($db) === $pk);
 
+// --- Remboursement d'un téléchargement non servi
+$tokR = ebook_deliver($db, 'EB-0001');
+ebook_consume_download($db, $tokR, '203.0.113.5', 'ua');
+ebook_consume_download($db, $tokR, '203.0.113.6', 'ua');
+$idR = (int) find_ebook_order($db, 'EB-0001')['id'];
+ebook_refund_download($db, $idR);
+$logIps = array_column(ebook_downloads_of($db, $idR), 'ip');
+check('remboursement : compteur décrémenté et journal retiré',
+    find_ebook_order($db, 'EB-0001')['dl_count'] === 1 && $logIps === ['203.0.113.5']);
+ebook_refund_download($db, $idR);
+ebook_refund_download($db, $idR);
+check('remboursement : jamais sous zéro', find_ebook_order($db, 'EB-0001')['dl_count'] === 0 && ebook_downloads_of($db, $idR) === []);
+
 // --- Tunnel papier intact
 $cols = array_column($db->query('PRAGMA table_info(orders)')->fetchAll(), 'name');
 check('table orders intacte', $cols === ['id', 'ref', 'token', 'created_at', 'status', 'qty', 'unit_cents', 'shipping_cents',

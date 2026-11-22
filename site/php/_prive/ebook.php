@@ -166,6 +166,21 @@ function ebook_consume_download(PDO $db, string $token, string $ip, string $ua):
     }
 }
 
+/** Rend un téléchargement compté mais jamais servi (échec avant envoi) : compteur -1 et dernière ligne du journal retirée. */
+function ebook_refund_download(PDO $db, int $orderId): void
+{
+    $db->beginTransaction();
+    try {
+        $db->prepare('UPDATE ebook_orders SET dl_count = dl_count - 1 WHERE id = ? AND dl_count > 0')->execute([$orderId]);
+        $db->prepare('DELETE FROM ebook_downloads WHERE rowid = (SELECT MAX(rowid) FROM ebook_downloads WHERE order_id = ?)')
+            ->execute([$orderId]);
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        throw $e;
+    }
+}
+
 function ebook_distinct_ips(PDO $db, int $orderId): int
 {
     $st = $db->prepare('SELECT COUNT(DISTINCT ip) FROM ebook_downloads WHERE order_id = ?');

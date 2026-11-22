@@ -33,12 +33,25 @@ if (!is_file(ebook_master_path())) {
 $order = ebook_consume_download($db, $token, client_ip(), (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
 if ($order === null) dl_not_valid();
 
+// Préparation : un échec ici survient avant tout octet envoyé, le téléchargement compté est rendu.
 $tmp = null;
 try {
     $tmp = ebook_build_copy($db, $order, ebook_tmp_dir());
     $size = filesize($tmp);
     if ($size === false) throw new RuntimeException('Taille illisible.');
+} catch (Throwable $e) {
+    error_log('telecharger ' . $order['ref'] . ': ' . $e->getMessage());
+    if ($tmp !== null) @unlink($tmp); // exit (dl_page) ne passe pas par finally
+    try {
+        ebook_refund_download($db, (int) $order['id']);
+    } catch (Throwable $e2) {
+        error_log('telecharger remboursement ' . $order['ref'] . ': ' . $e2->getMessage());
+    }
+    dl_page(500, 'Une erreur est survenue', 'Le téléchargement n'a pas pu être préparé. Votre lien reste utilisable : réessayez dans un moment, ou écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a>.');
+}
 
+// Envoi : pas de remboursement ici, les en-têtes sont partis.
+try {
     while (ob_get_level() > 0) ob_end_clean();
     ini_set('zlib.output_compression', '0');
     header('Content-Type: application/epub+zip');
@@ -47,15 +60,9 @@ try {
     header('Cache-Control: private, no-store, max-age=0');
     header('X-Robots-Tag: noindex');
     header('Referrer-Policy: no-referrer');
-    readfile($tmp);
-} catch (Throwable $e) {
-    error_log('telecharger ' . $order['ref'] . ': ' . $e->getMessage());
-    if ($tmp !== null) @unlink($tmp); // exit (dl_page) ne passe pas par finally
-    if (!headers_sent()) {
-        dl_page(500, 'Une erreur est survenue', 'Le téléchargement n\'a pas pu être préparé. Écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a> : nous vous renverrons un lien.');
-    }
+    if (readfile($tmp) === false) error_log('telecharger ' . $order['ref'] . ': lecture impossible');
 } finally {
-    if ($tmp !== null) @unlink($tmp);
+    @unlink($tmp);
 }
 
 // Alerte de partage après l'envoi ; un échec d'e-mail ne doit rien casser.
