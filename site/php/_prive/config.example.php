@@ -22,6 +22,7 @@ return [
 
     // --- Réseau (CDN / proxy) ---
     // Clé $_SERVER contenant la vraie IP du visiteur (ex. 'HTTP_X_REAL_IP'). Vide = REMOTE_ADDR.
+    // Doit être un en-tête à valeur unique posé par le CDN, jamais HTTP_X_FORWARDED_FOR (le visiteur peut en choisir la première valeur).
     // Repérer la bonne clé avec /admin/diagnostic depuis un téléphone en 4G.
     'client_ip_header' => '',
     // true = faire confiance au dernier élément de X-Forwarded-For (si client_ip_header est vide).

@@ -138,7 +138,7 @@ $sent = mail_ebook_delivered($mo, 'TOKEN123');
 check('mail livraison : renvoie true (mode log)', $sent === true);
 $log = $readLog();
 check('mail livraison : lien, 7 jours, 5 téléchargements',
-    str_contains($log, ebook_download_url('TOKEN123')) && str_contains($log, '7 jours') && str_contains($log, '5')
+    str_contains($log, ebook_download_url('TOKEN123')) && str_contains($log, '7 jours') && str_contains($log, EBOOK_DL_MAX . ' téléchargements')
     && str_contains($log, 'À: ' . $mo['email']));
 
 mail_ebook_share_alert($mo, 4);

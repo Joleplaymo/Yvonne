@@ -109,6 +109,12 @@ check('clé de catalogue inconnue ignorée', !isset(home_clean_el(['type' => 'te
 // --- Contraste automatique
 check('texte automatique selon le fond', home_auto_fg('cream') === 'navy' && home_auto_fg('navy') === 'cream' && home_auto_fg(null) === null);
 
+// --- Bouton « Version numérique »
+$withEbook = home_render(home_default_layout([], true), []);
+check('accueil : bouton numérique si vente ouverte', str_contains($withEbook, 'href="/numerique"') && str_contains($withEbook, 'Version numérique'));
+$without = home_render(home_default_layout(), []);
+check('accueil : pas de bouton si fermée', !str_contains($without, '/numerique') && !str_contains($without, 'Version numérique'));
+
 // --- Rétablir
 home_layout_reset($db);
 check('rétablir : retour à l’origine', !home_layout_custom($db) && count(home_layout($db)) === 6);
