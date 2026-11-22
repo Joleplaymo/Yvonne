@@ -200,6 +200,71 @@ check('tatouage : id et href sans collision', count($ids) === count(array_unique
     && $z->getFromName('OEBPS/exemplaire.xhtml') === 'ancien');
 $z->close();
 
+// Variante de la fixture : remplacements dans l'OPF + fichiers ajoutés/remplacés
+function variant(string $dir, string $name, int $v, array $replace, array $files = []): string
+{
+    epub_fixture("$dir/$name.epub", $v);
+    $z = new ZipArchive();
+    $z->open("$dir/$name.epub");
+    $z->addFromString('OEBPS/content.opf', str_replace(array_keys($replace), array_values($replace), $z->getFromName('OEBPS/content.opf')));
+    foreach ($files as $n => $data) $z->addFromString($n, $data);
+    $z->close();
+    return "$dir/$name.epub";
+}
+// Watermarke et renvoie [spine (idrefs), position de la page exemplaire]
+function exemplaire_spine(string $master): array
+{
+    global $buyer, $secret;
+    epub_watermark($master, "$master.out", $buyer, $secret);
+    $z = new ZipArchive();
+    $z->open("$master.out");
+    $opf = xml_ok($z->getFromName('OEBPS/content.opf'));
+    $z->close();
+    $spine = [];
+    foreach ($opf->getElementsByTagName('itemref') as $ir) $spine[] = $ir->getAttribute('idref');
+    return [$spine, array_search('yv-exemplaire', $spine, true)];
+}
+$titre = ['OEBPS/titre.xhtml' => '<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Titre</title></head><body><p>Titre</p></body></html>'];
+$titreItem = ['<item id="cover" ' => '<item id="titre" href="titre.xhtml" media-type="application/xhtml+xml"/><item id="cover" '];
+$sansGuide = ['<guide><reference type="cover" title="Couverture" href="cover.xhtml"/></guide>' => ''];
+[$sp, $pos] = exemplaire_spine(variant($dir, 'cv3', 3, $titreItem + ['<spine>' => '<spine><itemref idref="titre"/>'], $titre));
+check('couverture non première : epub 3 via cover-image', $pos === 2 && $sp[1] === 'cover');
+[$sp, $pos] = exemplaire_spine(variant($dir, 'cv2', 2, $titreItem + $sansGuide + ['<spine toc="ncx">' => '<spine toc="ncx"><itemref idref="titre"/>'], $titre));
+check('couverture non première : epub 2 via meta cover sans guide', $pos === 2 && $sp[1] === 'cover');
+[$sp, $pos] = exemplaire_spine(variant($dir, 'cvg', 2, $titreItem + ['<spine toc="ncx">' => '<spine toc="ncx"><itemref idref="titre"/>'], $titre));
+check('couverture non première : epub 2 via guide', $pos === 2 && $sp[1] === 'cover');
+$nav = '<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Sommaire</title></head><body>'
+    . '<nav epub:type="toc"><ol><li><a href="chapitre-1.xhtml">Chapitre 1</a></li></ol></nav>'
+    . '<nav epub:type="landmarks"><ol><li><a epub:type="cover" href="./chapitre-1.xhtml#debut">Couverture</a></li></ol></nav></body></html>';
+[$sp, $pos] = exemplaire_spine(variant($dir, 'cvl', 3, $titreItem + ['<spine>' => '<spine><itemref idref="titre"/>'], $titre + ['OEBPS/nav.xhtml' => $nav]));
+check('couverture : landmarks epub 3 prioritaires', $pos === 3 && $sp[2] === 'ch1');
+[$sp, $pos] = exemplaire_spine(variant($dir, 'cvp', 3, $titreItem + ['properties="cover-image"' => '', '<spine>' => '<spine><itemref idref="titre"/>'], $titre));
+check('couverture introuvable → après le 1er itemref', $pos === 1);
+
+// OPF incomplet : refusé dès la validation
+$r = epub_validate(variant($dir, 'vide', 3, ['<itemref idref="cover"/><itemref idref="ch1"/><itemref idref="ch2"/>' => '']));
+check('spine vide refusé à la validation', !$r['ok'] && count($r['errors']) === 1);
+
+// Collision de nom insensible à la casse
+epub_watermark(variant($dir, 'casse', 3, [], ['OEBPS/Exemplaire.XHTML' => 'ancien']), "$dir/casse-out.epub", $buyer, $secret);
+$z = new ZipArchive();
+$z->open("$dir/casse-out.epub");
+$names = [];
+for ($i = 0; $i < $z->numFiles; $i++) $names[] = strtolower($z->getNameIndex($i));
+check('tatouage : collision de nom insensible à la casse', count($names) === count(array_unique($names)) && $z->getFromName('OEBPS/Exemplaire.XHTML') === 'ancien');
+$z->close();
+
+// Échec en cours d'écriture (CRC d'un chapitre corrompu) : exception et aucune sortie partielle
+epub_fixture("$dir/crc.epub", 3);
+$z = new ZipArchive();
+$z->open("$dir/crc.epub");
+$z->setCompressionName('OEBPS/chapitre-1.xhtml', ZipArchive::CM_STORE);
+$z->close();
+$raw = file_get_contents("$dir/crc.epub");
+file_put_contents("$dir/crc.epub", str_replace('fois Yvonne', 'fois Yvonnf', $raw));
+check('tatouage : chapitre corrompu → exception sans fichier partiel', epub_validate("$dir/crc.epub")['ok'] && str_contains($raw, 'fois Yvonne')
+    && throws(fn() => epub_watermark("$dir/crc.epub", "$dir/crc-out.epub", $buyer, $secret)) && !file_exists("$dir/crc-out.epub"));
+
 array_map('unlink', glob("$dir/*"));
 rmdir($dir);
 

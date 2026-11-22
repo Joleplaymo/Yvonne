@@ -45,6 +45,66 @@ function epub_opf(ZipArchive $zip): ?array
     return [$path, $opf];
 }
 
+function epub_dir(string $path): string
+{
+    return str_contains($path, '/') ? substr($path, 0, strrpos($path, '/') + 1) : '';
+}
+
+// Éléments de l'OPF utilisés par le tatouage, ou null si manifest, metadata ou spine (non vide) manquent.
+function epub_parts(DOMDocument $opf): ?array
+{
+    $x = new DOMXPath($opf);
+    $x->registerNamespace('opf', EPUB_OPF_NS);
+    $x->registerNamespace('dc', EPUB_DC_NS);
+    $p = ['x' => $x];
+    foreach (['manifest', 'metadata', 'spine'] as $n) $p[$n] = $x->query("/opf:package/opf:$n")->item(0);
+    $p['itemrefs'] = $p['spine'] ? iterator_to_array($x->query('opf:itemref', $p['spine'])) : [];
+    return $p['manifest'] && $p['metadata'] && $p['itemrefs'] ? $p : null;
+}
+
+// Fichiers référencés (src, href, xlink:href) par un document, résolus depuis son dossier.
+function epub_refs(string $content, string $docPath): array
+{
+    preg_match_all('/\b(?:src|href)\s*=\s*(["\'])(.*?)\1/i', $content, $m);
+    return array_map(fn($h) => epub_resolve(epub_dir($docPath), html_entity_decode($h, ENT_QUOTES | ENT_XML1)), $m[2]);
+}
+
+// Itemref de la couverture : landmarks EPUB 3, sinon <guide>, sinon 1re page du spine qui affiche
+// l'image de couverture (properties « cover-image » ou <meta name="cover">), sinon 1er itemref.
+function epub_cover(ZipArchive $zip, DOMXPath $x, string $opfDir, array $items, array $itemrefs): DOMElement
+{
+    $byPath = [];
+    foreach ($itemrefs as $ir) {
+        if (isset($items[$ir->getAttribute('idref')])) $byPath[$items[$ir->getAttribute('idref')][0]] ??= $ir;
+    }
+    $has = fn(string $attr, string $t) => "contains(concat(' ', normalize-space($attr), ' '), ' $t ')";
+    $tokens = fn(DOMElement $e) => preg_split('/\s+/', trim($e->getAttribute('properties')), -1, PREG_SPLIT_NO_EMPTY);
+    $paths = [];
+    foreach ($items as [$path, $el]) {
+        if (!in_array('nav', $tokens($el), true) || !($nav = epub_xml($zip->getFromName($path)))) continue;
+        $nx = new DOMXPath($nav);
+        $nx->registerNamespace('h', 'http://www.w3.org/1999/xhtml');
+        $nx->registerNamespace('epub', 'http://www.idpf.org/2007/ops');
+        foreach ($nx->query("//h:nav[{$has('@epub:type', 'landmarks')}]//h:a[{$has('@epub:type', 'cover')}]/@href") as $h) $paths[] = epub_resolve(epub_dir($path), $h->value);
+    }
+    foreach ($x->query('//opf:guide/opf:reference[@type="cover"]') as $ref) $paths[] = epub_resolve($opfDir, $ref->getAttribute('href'));
+    foreach ($paths as $p) if (isset($byPath[$p])) return $byPath[$p];
+
+    $images = [];
+    $metaCover = (string) $x->evaluate('string(//opf:metadata/opf:meta[@name="cover"]/@content)');
+    foreach ($items as $id => [$path, $el]) {
+        if (in_array('cover-image', $tokens($el), true) || $id === $metaCover) $images[] = $path;
+    }
+    foreach ($images as $img) if (isset($byPath[$img])) return $byPath[$img]; // <meta name="cover"> vers une page
+    if ($images) {
+        foreach ($byPath as $path => $ir) {
+            if ($items[$ir->getAttribute('idref')][1]->getAttribute('media-type') !== 'application/xhtml+xml') continue;
+            if (array_intersect($images, epub_refs((string) $zip->getFromName($path), $path))) return $ir;
+        }
+    }
+    return $itemrefs[0];
+}
+
 function epub_validate(string $path): array
 {
     $res = ['ok' => false, 'errors' => [], 'layout' => 'reflowable', 'title' => ''];
@@ -58,12 +118,13 @@ function epub_validate(string $path): array
         $res['errors'][] = 'Le premier fichier de l\'archive doit être « mimetype » contenant « ' . EPUB_MIMETYPE . ' ».';
     }
     $opf = epub_opf($zip);
+    $parts = $opf ? epub_parts($opf[1]) : null;
     if (!$opf) {
         $res['errors'][] = 'META-INF/container.xml absent ou fichier OPF introuvable.';
+    } elseif (!$parts) {
+        $res['errors'][] = 'Fichier OPF incomplet (manifest, metadata ou spine vide).';
     } else {
-        $x = new DOMXPath($opf[1]);
-        $x->registerNamespace('opf', EPUB_OPF_NS);
-        $x->registerNamespace('dc', EPUB_DC_NS);
+        $x = $parts['x'];
         $res['title'] = trim((string) $x->evaluate('string(//opf:metadata/dc:title[1])'));
         if (trim((string) $x->evaluate('string(//opf:metadata/opf:meta[@property="rendition:layout"])')) === 'pre-paginated') {
             $res['layout'] = 'pre-paginated';
@@ -119,39 +180,22 @@ function epub_watermark(string $master, string $dest, array $buyer, string $secr
     if ($in->open($master, ZipArchive::RDONLY) !== true) throw new RuntimeException('Epub maître illisible.');
     try {
         [$opfPath, $opf] = epub_opf($in) ?? throw new RuntimeException('OPF introuvable.');
-        $opfDir = str_contains($opfPath, '/') ? substr($opfPath, 0, strrpos($opfPath, '/') + 1) : '';
+        $opfDir = epub_dir($opfPath);
         $version = (int) $opf->documentElement->getAttribute('version');
-        $x = new DOMXPath($opf);
-        $x->registerNamespace('opf', EPUB_OPF_NS);
-        $manifest = $x->query('/opf:package/opf:manifest')->item(0);
-        $spine = $x->query('/opf:package/opf:spine')->item(0);
-        $metadata = $x->query('/opf:package/opf:metadata')->item(0);
-        $itemrefs = $spine ? iterator_to_array($x->query('opf:itemref', $spine)) : [];
-        if (!$manifest || !$metadata || !$itemrefs) throw new RuntimeException('OPF incomplet (manifest, metadata ou spine).');
+        ['x' => $x, 'manifest' => $manifest, 'metadata' => $metadata, 'spine' => $spine, 'itemrefs' => $itemrefs] = epub_parts($opf)
+            ?? throw new RuntimeException('OPF incomplet (manifest, metadata ou spine).');
 
         $items = []; // id => [chemin dans l'archive, élément]
         foreach ($x->query('opf:item', $manifest) as $it) $items[$it->getAttribute('id')] = [epub_resolve($opfDir, $it->getAttribute('href')), $it];
 
-        // Page « exemplaire » : id et chemin libres
+        // Page « exemplaire » : id et chemin libres (chemin comparé sans tenir compte de la casse)
         $id = 'yv-exemplaire';
         for ($i = 2; isset($items[$id]); $i++) $id = "yv-exemplaire-$i";
         $href = 'exemplaire.xhtml';
-        $paths = array_column($items, 0);
-        for ($i = 2; in_array($opfDir . $href, $paths, true) || $in->locateName($opfDir . $href) !== false; $i++) $href = "exemplaire-$i.xhtml";
+        $paths = array_map('strtolower', array_column($items, 0));
+        for ($i = 2; in_array(strtolower($opfDir . $href), $paths, true) || $in->locateName($opfDir . $href, ZipArchive::FL_NOCASE) !== false; $i++) $href = "exemplaire-$i.xhtml";
 
-        // Couverture : properties « cover », <meta name="cover">, <reference type="cover">, sinon 1er itemref
-        $coverIds = [(string) $x->evaluate('string(//opf:metadata/opf:meta[@name="cover"]/@content)')];
-        $coverPaths = [];
-        foreach ($x->query('//opf:guide/opf:reference[@type="cover"]') as $ref) $coverPaths[] = epub_resolve($opfDir, $ref->getAttribute('href'));
-        $after = $itemrefs[0];
-        foreach ($itemrefs as $ir) {
-            $iid = $ir->getAttribute('idref');
-            if (!isset($items[$iid])) continue;
-            if (str_contains($items[$iid][1]->getAttribute('properties'), 'cover') || in_array($iid, $coverIds, true) || in_array($items[$iid][0], $coverPaths, true)) {
-                $after = $ir;
-                break;
-            }
-        }
+        $after = epub_cover($in, $x, $opfDir, $items, $itemrefs);
         $item = $manifest->appendChild($opf->createElementNS(EPUB_OPF_NS, 'item'));
         $item->setAttribute('id', $id);
         $item->setAttribute('href', $href);
@@ -188,13 +232,19 @@ function epub_watermark(string $master, string $dest, array $buyer, string $secr
             $name = (string) $in->getNameIndex($i);
             if ($name === 'mimetype') continue;
             if (str_ends_with($name, '/')) { $ok = $out->addEmptyDir(rtrim($name, '/')); continue; }
-            $data = $in->getFromIndex($i);
-            if ($data === false) { $ok = false; break; }
+            $data = $in->getFromIndex($i); // libzip ne vérifie pas le CRC ici : on le compare nous-mêmes
+            if ($data === false || crc32($data) !== $in->statIndex($i)['crc']) { $ok = false; break; }
             if ($name === $opfPath) $data = $opfXml;
             elseif (isset($toMark[$name])) $data = epub_mark($data, $comment);
             $ok = $out->addFromString($name, $data);
         }
-        $ok = $ok && $out->addFromString($opfDir . $href, $page) && $out->close();
+        $ok = $ok && $out->addFromString($opfDir . $href, $page);
+        if ($ok) {
+            $ok = $out->close();
+        } else {
+            $out->unchangeAll(); // sinon le destructeur écrirait l'archive partielle
+            @$out->close();
+        }
         if (!$ok) {
             @unlink($dest);
             throw new RuntimeException('Écriture de l\'exemplaire impossible.');
