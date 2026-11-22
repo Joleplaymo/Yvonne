@@ -43,6 +43,13 @@ if ($root && $data && str_starts_with($data . '/', rtrim($root, '/') . '/')) {
     $warn = '<p class="notice error">Attention : le dossier des commandes est dans le site web (' . h($data) . '). Déplacez-le hors de public_html.</p>';
 }
 
+// Livres numériques : purge opportuniste du journal des téléchargements, puis liste à traiter.
+require_once __DIR__ . '/../_prive/ebook.php';
+ebook_purge_downloads($db);
+$ebookCounts = count_ebook_orders($db);
+$ebookAll = ($_GET['numerique'] ?? '') === 'all';
+$ebookList = list_ebook_orders($db, $ebookAll ? null : 'attente_paiement');
+
 $tab = fn(string $key, string $label) => '<a href="/admin' . ($key === 'todo' ? '' : '?statut=' . $key) . '"'
     . ($filter === $key ? ' class="on"' : '') . '>' . h($label) . '</a>';
 
@@ -70,6 +77,31 @@ ob_start();
         <td><?= h(eur((int) $o['total_cents'])) ?></td>
         <td class="opt"><?= h($o['relay_city']) ?></td>
         <td><span class="pill <?= h($o['status']) ?>"><?= h(STATUS_LABELS[$o['status']]) ?></span></td>
+      </tr>
+    <?php endforeach ?>
+    </tbody>
+  </table>
+<?php endif ?>
+
+<h2 id="numerique" style="margin-top:40px;">Livres numériques</h2>
+<p class="hint">
+  À traiter : <?= (int) $ebookCounts['attente_paiement'] ?> · livrées : <?= (int) $ebookCounts['livree'] ?> · annulées : <?= (int) $ebookCounts['annulee'] ?>
+  — <a href="/admin?numerique=<?= $ebookAll ? 'todo' : 'all' ?>#numerique"><?= $ebookAll ? 'à traiter seulement' : 'toutes' ?></a>
+  — <a href="/admin/export-numerique.csv">export CSV</a>
+</p>
+<?php if (!$ebookList): ?>
+  <p>Aucune commande de livre numérique ici.</p>
+<?php else: ?>
+  <table class="list">
+    <thead><tr><th>Réf.</th><th class="opt">Date</th><th>Client</th><th>Prix</th><th>Statut</th></tr></thead>
+    <tbody>
+    <?php foreach ($ebookList as $o): ?>
+      <tr>
+        <td><a href="/admin/<?= h($o['ref']) ?>"><strong><?= h($o['ref']) ?></strong></a></td>
+        <td class="opt"><?= h(fr_date($o['created_at'])) ?></td>
+        <td><?= h($o['first_name'] . ' ' . $o['last_name']) ?></td>
+        <td><?= h(eur((int) $o['price_cents'])) ?></td>
+        <td><span class="pill <?= h($o['status']) ?>"><?= h(EBOOK_STATUS_LABELS[$o['status']]) ?></span></td>
       </tr>
     <?php endforeach ?>
     </tbody>

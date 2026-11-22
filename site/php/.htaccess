@@ -53,6 +53,8 @@ RewriteRule ^numerique/merci$ numerique-merci.php [L,QSA]
 RewriteRule ^telecharger/([A-Za-z0-9_-]{43})$ telecharger.php?j=$1 [L]
 RewriteRule ^admin/?$ admin/index.php [L,QSA]
 RewriteRule ^admin/export\.csv$ admin/export.php [L]
+RewriteRule ^admin/export-numerique\.csv$ admin/export-numerique.php [L]
+RewriteRule ^admin/epub$ admin/epub.php [L]
 RewriteRule ^admin/deconnexion$ admin/deconnexion.php [L]
 RewriteRule ^admin/photos$ admin/photos.php [L]
 RewriteRule ^admin/textes$ admin/textes.php [L]
@@ -67,6 +69,7 @@ RewriteRule ^photo/([a-z0-9-]+)$ photo.php?slot=$1 [L,QSA]
 RewriteRule ^favicon/([0-9]+)\.png$ favicon.php?s=$1 [L]
 RewriteRule ^favicon\.ico$ favicon.php?s=48 [L]
 RewriteRule ^admin/(YV-[0-9]+)$ admin/commande.php?ref=$1 [L,QSA]
+RewriteRule ^admin/(EB-[0-9]+)$ admin/numerique.php?ref=$1 [L,QSA]
 
 # Pages statiques sans extension : /panier -> panier.html
 RewriteCond %{REQUEST_FILENAME}.html -f

@@ -52,15 +52,7 @@ try {
 
 // Envoi : pas de remboursement ici, les en-têtes sont partis.
 try {
-    while (ob_get_level() > 0) ob_end_clean();
-    ini_set('zlib.output_compression', '0');
-    header('Content-Type: application/epub+zip');
-    header('Content-Disposition: attachment; filename="les-hormones-d-yvonne.epub"');
-    header('Content-Length: ' . $size);
-    header('Cache-Control: private, no-store, max-age=0');
-    header('X-Robots-Tag: noindex');
-    header('Referrer-Policy: no-referrer');
-    if (readfile($tmp) === false) error_log('telecharger ' . $order['ref'] . ': lecture impossible');
+    if (!ebook_send_epub($tmp, $size)) error_log('telecharger ' . $order['ref'] . ': lecture impossible');
 } finally {
     @unlink($tmp);
 }
