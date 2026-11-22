@@ -11,6 +11,13 @@ AddDefaultCharset UTF-8
     Header unset X-Powered-By
 </IfModule>
 
+# Le jeton de téléchargement est dans l'URL : pas de Referer sortant (surcharge la valeur globale ci-dessus).
+<IfModule mod_headers.c>
+    <If "%{THE_REQUEST} =~ m#^[A-Z]+ /telecharger/#">
+        Header always set Referrer-Policy "no-referrer"
+    </If>
+</IfModule>
+
 # Bases de données et sauvegardes : jamais servies.
 <FilesMatch "\.(sqlite|sqlite-wal|sqlite-shm|db|bak)$">
     <IfModule mod_authz_core.c>
@@ -43,6 +50,7 @@ RewriteRule ^api/orders$ api/orders.php [L]
 RewriteRule ^merci$ merci.php [L,QSA]
 RewriteRule ^numerique$ numerique.php [L,QSA]
 RewriteRule ^numerique/merci$ numerique-merci.php [L,QSA]
+RewriteRule ^telecharger/([A-Za-z0-9_-]{43})$ telecharger.php?j=$1 [L]
 RewriteRule ^admin/?$ admin/index.php [L,QSA]
 RewriteRule ^admin/export\.csv$ admin/export.php [L]
 RewriteRule ^admin/deconnexion$ admin/deconnexion.php [L]
