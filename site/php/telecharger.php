@@ -47,7 +47,7 @@ try {
     } catch (Throwable $e2) {
         error_log('telecharger remboursement ' . $order['ref'] . ': ' . $e2->getMessage());
     }
-    dl_page(500, 'Une erreur est survenue', 'Le téléchargement n'a pas pu être préparé. Votre lien reste utilisable : réessayez dans un moment, ou écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a>.');
+    dl_page(500, 'Une erreur est survenue', 'Le téléchargement n\'a pas pu être préparé. Votre lien reste utilisable : réessayez dans un moment, ou écrivez à <a href="mailto:contact@vanessagandino.fr">contact@vanessagandino.fr</a>.');
 }
 
 // Envoi : pas de remboursement ici, les en-têtes sont partis.
