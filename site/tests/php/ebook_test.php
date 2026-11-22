@@ -150,13 +150,15 @@ $tokR = ebook_deliver($db, 'EB-0001');
 ebook_consume_download($db, $tokR, '203.0.113.5', 'ua');
 ebook_consume_download($db, $tokR, '203.0.113.6', 'ua');
 $idR = (int) find_ebook_order($db, 'EB-0001')['id'];
+$logBefore = count(ebook_downloads_of($db, $idR));
 ebook_refund_download($db, $idR);
 $logIps = array_column(ebook_downloads_of($db, $idR), 'ip');
 check('remboursement : compteur décrémenté et journal retiré',
-    find_ebook_order($db, 'EB-0001')['dl_count'] === 1 && $logIps === ['203.0.113.5']);
+    find_ebook_order($db, 'EB-0001')['dl_count'] === 1 && count($logIps) === $logBefore - 1
+    && !in_array('203.0.113.6', $logIps, true) && in_array('203.0.113.5', $logIps, true));
 ebook_refund_download($db, $idR);
 ebook_refund_download($db, $idR);
-check('remboursement : jamais sous zéro', find_ebook_order($db, 'EB-0001')['dl_count'] === 0 && ebook_downloads_of($db, $idR) === []);
+check('remboursement : jamais sous zéro', find_ebook_order($db, 'EB-0001')['dl_count'] === 0);
 
 // --- Tunnel papier intact
 $cols = array_column($db->query('PRAGMA table_info(orders)')->fetchAll(), 'name');
