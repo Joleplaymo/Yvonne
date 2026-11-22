@@ -17,6 +17,11 @@ function check(string $name, bool $cond): void
     }
 }
 
+function throws(callable $fn): bool
+{
+    try { $fn(); return false; } catch (Throwable) { return true; }
+}
+
 $db = db(':memory:');
 $good = ['firstName' => ' Yvonne ', 'lastName' => 'Dupont', 'email' => 'Y@Example.fr', 'consent' => '1'];
 
@@ -39,8 +44,12 @@ check('constantes', EBOOK_DL_DAYS === 7 && EBOOK_DL_MAX === 5 && EBOOK_ALERT_IPS
 check('comptage', count_ebook_orders($db)['attente_paiement'] === 1 && count(list_ebook_orders($db)) === 1);
 
 // --- Jeton
-check('jeton refusé avant paiement', ebook_consume_download($db, 'nimportequoi', '203.0.113.1', 'ua') === null);
 $tok = ebook_deliver($db, 'EB-0001');
+$db->exec("UPDATE ebook_orders SET status = 'attente_paiement'");
+check('jeton refusé avant paiement', ebook_consume_download($db, $tok, '203.0.113.1', 'ua') === null);
+$tok = ebook_deliver($db, 'EB-0001');
+check('livraison : ref inconnue refusée', throws(fn() => ebook_deliver($db, 'EB-9999')));
+check('set_status livree refusé', throws(fn() => ebook_set_status($db, 'EB-0001', 'livree')));
 check('jeton : 43 caractères base64url', preg_match('/^[A-Za-z0-9_-]{43}$/', $tok) === 1);
 $row = find_ebook_order($db, 'EB-0001');
 check('jeton stocké haché', $row['dl_token_hash'] !== $tok && $row['dl_token_hash'] === hash('sha256', $tok));

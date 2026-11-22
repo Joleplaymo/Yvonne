@@ -114,16 +114,17 @@ function ebook_deliver(PDO $db, string $ref): string
 {
     $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
     $expires = gmdate('Y-m-d\TH:i:s\Z', time() + EBOOK_DL_DAYS * 86400);
-    $db->prepare("UPDATE ebook_orders SET status = 'livree', paid_at = COALESCE(paid_at, ?), dl_token_hash = ?,
-        dl_count = 0, dl_expires_at = ?, dl_max = ? WHERE ref = ?")
-        ->execute([now_iso(), hash('sha256', $token), $expires, EBOOK_DL_MAX, $ref]);
+    $st = $db->prepare("UPDATE ebook_orders SET status = 'livree', paid_at = COALESCE(paid_at, ?), dl_token_hash = ?,
+        dl_count = 0, dl_expires_at = ?, dl_max = ? WHERE ref = ?");
+    $st->execute([now_iso(), hash('sha256', $token), $expires, EBOOK_DL_MAX, $ref]);
+    if ($st->rowCount() !== 1) throw new RuntimeException("Commande introuvable : $ref");
     return $token;
 }
 
-/** Annuler ou rouvrir (rouvrir = attente de paiement, le lien est révoqué). */
+/** Annuler ou rouvrir (rouvrir = attente de paiement, le lien est révoqué). Livrer passe par ebook_deliver(). */
 function ebook_set_status(PDO $db, string $ref, string $status): void
 {
-    if (!in_array($status, EBOOK_STATUSES, true)) throw new InvalidArgumentException("Statut invalide : $status");
+    if (!in_array($status, ['annulee', 'attente_paiement'], true)) throw new InvalidArgumentException("Statut invalide : $status");
     if ($status === 'attente_paiement') {
         $db->prepare('UPDATE ebook_orders SET status = ?, dl_token_hash = NULL, dl_expires_at = NULL, dl_count = 0 WHERE ref = ?')->execute([$status, $ref]);
     } else {
