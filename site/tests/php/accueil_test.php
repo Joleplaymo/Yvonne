@@ -8,6 +8,14 @@ putenv('LOG_FILE=stderr');
 require __DIR__ . '/../../php/_prive/lib.php';
 require __DIR__ . '/../../php/_prive/accueil.php';
 
+// Les photos d'origine (_prive/photos/*.webp) ne sont générées que par scripts/assemble.mjs dans build/.
+// Depuis les sources, on dépose des photos factices dans le dossier de données temporaire,
+// comme si chaque emplacement avait sa photo (cas de la production).
+@mkdir(photo_dir(), 0700, true);
+foreach (array_keys(PHOTO_SLOTS) as $slot) {
+    foreach (PHOTO_WIDTHS as $w) file_put_contents(photo_dir() . "/$slot-$w.webp", 'factice');
+}
+
 $fails = 0;
 $count = 0;
 function check(string $name, bool $cond): void
