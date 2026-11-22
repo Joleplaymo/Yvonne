@@ -25,7 +25,14 @@ function ebook_price_cents(PDO $db): int
     return ($v !== null && ctype_digit($v) && (int) $v > 0) ? (int) $v : 499;
 }
 
+/** Vente effectivement ouverte : réglage activé ET fichier maître présent. */
 function ebook_sale_open(PDO $db): bool
+{
+    return ebook_sale_setting($db) && is_file(ebook_master_path());
+}
+
+/** Réglage brut « vente ouverte » (sans tenir compte du fichier maître). */
+function ebook_sale_setting(PDO $db): bool
 {
     return get_setting($db, 'ebook_vente_ouverte') === '1';
 }

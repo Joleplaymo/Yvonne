@@ -62,7 +62,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 exit;
             }
             try {
-                ebook_send_epub($tmp, $size);
+                if (!ebook_send_epub($tmp, $size)) error_log('epub test: lecture impossible');
             } finally {
                 @unlink($tmp);
             }
@@ -103,7 +103,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 $flash = $_SESSION['epub_flash'] ?? [];
 unset($_SESSION['epub_flash']);
 $master = ebook_master_info();
-$open = ebook_sale_open($db);
+$open = ebook_sale_setting($db);
+$noMaster = $open && $master === null;
 $price = ebook_price_cents($db);
 $previewUrl = cfg()['public_base_url'] . '/numerique?apercu=' . ebook_preview_key($db);
 
@@ -113,6 +114,7 @@ ob_start();
 <?php foreach ($flash as [$type, $text]): ?>
   <p class="notice<?= $type === 'ok' ? '' : ' error' ?>"><?= h($text) ?></p>
 <?php endforeach ?>
+<?php if ($noMaster): ?><p class="notice error">Le réglage est « ouverte », mais la vente est fermée au public tant qu'aucun fichier n'est déposé.</p><?php endif ?>
 <p>Vente : <strong><?= $open ? 'ouverte' : 'fermée' ?></strong> · <a href="/admin">← Commandes</a></p>
 
 <div class="detail">

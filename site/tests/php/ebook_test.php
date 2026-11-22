@@ -96,7 +96,14 @@ check('commande conservée après purge', find_ebook_order($db, 'EB-0001') !== n
 // --- Réglages
 check('vente fermée par défaut', ebook_sale_open($db) === false);
 set_setting($db, 'ebook_vente_ouverte', '1');
-check('vente ouverte après réglage', ebook_sale_open($db) === true);
+@unlink(ebook_master_path());
+check('réglage ouvert sans maître : vente fermée', ebook_sale_setting($db) === true && ebook_sale_open($db) === false);
+@mkdir(dirname(ebook_master_path()), 0700, true);
+file_put_contents(ebook_master_path(), 'x');
+check('réglage ouvert avec maître : vente ouverte', ebook_sale_open($db) === true);
+set_setting($db, 'ebook_vente_ouverte', '0');
+check('réglage fermé avec maître : vente fermée', ebook_sale_open($db) === false);
+set_setting($db, 'ebook_vente_ouverte', '1');
 check('prix par défaut 499', ebook_price_cents($db) === 499);
 set_setting($db, 'ebook_price_cents', '699');
 check('prix réglable', ebook_price_cents($db) === 699);
@@ -127,7 +134,8 @@ check('mail commande : consentement et date',
     && str_contains($log, 'À: ' . $mo['email']) && str_contains($log, ebook_order_page_url($mo)));
 check('mail commande : copie à l\'admin', str_contains($log, 'À: admin@exemple.test') && str_contains($log, 'Nouvelle commande numérique EB-0001'));
 
-mail_ebook_delivered($mo, 'TOKEN123');
+$sent = mail_ebook_delivered($mo, 'TOKEN123');
+check('mail livraison : renvoie true (mode log)', $sent === true);
 $log = $readLog();
 check('mail livraison : lien, 7 jours, 5 téléchargements',
     str_contains($log, ebook_download_url('TOKEN123')) && str_contains($log, '7 jours') && str_contains($log, '5')

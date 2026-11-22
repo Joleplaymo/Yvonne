@@ -14,15 +14,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
     $result = $action;
     switch ($action) {
-        case 'deliver':
+        case 'deliver': // premier envoi : sans effet si déjà livrée (double clic)
+        case 'resend':  // nouveau lien : uniquement pour une commande déjà livrée
             if ($o['status'] === 'annulee') {
                 $result = 'refused-cancelled';
+            } elseif (($action === 'deliver') === ($o['status'] === 'livree')) {
+                $result = 'noop';
             } elseif (!is_file(ebook_master_path())) {
                 $result = 'refused-master';
             } else {
                 $token = ebook_deliver($db, $ref);
-                // mail_ebook_delivered() ne renvoie rien : un échec d'envoi n'est visible que dans les journaux du serveur.
-                mail_ebook_delivered(find_ebook_order($db, $ref), $token);
+                $result = mail_ebook_delivered(find_ebook_order($db, $ref), $token) ? $action : 'deliver-mailfail';
             }
             break;
         case 'cancel':
@@ -44,6 +46,9 @@ $price = eur((int) $o['price_cents']);
 $downloads = ebook_downloads_of($db, (int) $o['id']);
 $notices = [
     'deliver' => ['Lien envoyé au client.', false],
+    'resend' => ["Nouveau lien envoyé au client ; l'ancien ne fonctionne plus.", false],
+    'noop' => ['Rien à faire : cette commande est déjà dans cet état.', false],
+    'deliver-mailfail' => ["La commande est livrée et le lien a été régénéré, mais l'e-mail n'a pas pu être envoyé. Cliquez sur « Renvoyer un nouveau lien » pour réessayer.", true],
     'cancel' => ['Commande annulée.', false],
     'reopen' => ['Commande remise en attente de paiement ; le lien précédent ne fonctionne plus.', false],
     'note' => ['Note enregistrée.', false],
@@ -104,7 +109,7 @@ ob_start();
     </form>
   <?php elseif ($status === 'livree'): ?>
     <form method="post" class="act" data-confirm="Un nouveau lien va être envoyé au client. L'ancien lien ne fonctionnera plus. Continuer ?"><?= csrf_field() ?>
-      <input type="hidden" name="action" value="deliver">
+      <input type="hidden" name="action" value="resend">
       <button class="cta terra">Renvoyer un nouveau lien</button>
       <span class="hint">L'ancien lien cesse de fonctionner et le compteur repart à zéro.</span>
     </form>

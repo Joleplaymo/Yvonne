@@ -206,9 +206,10 @@ Admin : {$c['public_base_url']}/admin/{$o['ref']}");
     }
 }
 
-function mail_ebook_delivered(array $o, string $token): void
+/** Renvoie false si l'envoi a échoué (la commande est déjà livrée : l'admin peut renvoyer un lien). */
+function mail_ebook_delivered(array $o, string $token): bool
 {
-    send_mail($o['email'], "Votre livre numérique est prêt — commande {$o['ref']}", "Bonjour {$o['first_name']},
+    return send_mail($o['email'], "Votre livre numérique est prêt — commande {$o['ref']}", "Bonjour {$o['first_name']},
 
 Votre paiement est bien arrivé, merci ! Voici votre lien de téléchargement :
 " . ebook_download_url($token) . "
