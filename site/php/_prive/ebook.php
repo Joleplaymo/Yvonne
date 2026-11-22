@@ -207,3 +207,24 @@ function ebook_download_url(string $token): string
 {
     return cfg()['public_base_url'] . '/telecharger/' . $token;
 }
+
+// ---------------------------------------------------------------- Aperçu (vente fermée)
+
+/** Clé secrète du lien d'aperçu /numerique?apercu=… ; générée au premier appel, stable ensuite. */
+function ebook_preview_key(PDO $db): string
+{
+    $existing = get_setting($db, 'ebook_apercu_cle');
+    if ($existing !== null && $existing !== '') return $existing;
+    $db->prepare('INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, ?)')
+        ->execute(['ebook_apercu_cle', bin2hex(random_bytes(32)), now_iso()]);
+    return (string) get_setting($db, 'ebook_apercu_cle');
+}
+
+/** Vérifie une clé d'aperçu sans jamais en générer. */
+function ebook_preview_allowed(PDO $db, string $given): bool
+{
+    if ($given === '') return false;
+    $stored = get_setting($db, 'ebook_apercu_cle');
+    if ($stored === null || $stored === '') return false;
+    return hash_equals($stored, $given);
+}

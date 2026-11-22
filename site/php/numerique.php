@@ -1,13 +1,15 @@
 <?php
 declare(strict_types=1);
-require __DIR__ . '/_prive/admin.php';
+require __DIR__ . '/_prive/lib.php';
+require_once __DIR__ . '/_prive/mail.php';
 require_once __DIR__ . '/_prive/ebook.php';
 
 // Commande du livre numérique : formulaire classique (sans JavaScript).
-// Protections : même origine, pot de miel, limite de débit. Vente fermée par défaut ; une session admin peut commander (test réel).
+// Protections : même origine, pot de miel, limite de débit. Vente fermée par défaut ; le lien d'aperçu
+// /numerique?apercu=<clé> (clé secrète, voir l'admin) permet de commander quand même (commande test réelle).
 
 /** @param array<string,string> $values @param array<string,string> $errors */
-function ebook_form_page(PDO $db, array $values, array $errors, int $status = 200): never
+function ebook_form_page(PDO $db, array $values, array $errors, int $status = 200, string $preview = ''): never
 {
     $price = eur(ebook_price_cents($db));
     $cgv = ebook_cgv_url($db);
@@ -39,6 +41,7 @@ function ebook_form_page(PDO $db, array $values, array $errors, int $status = 20
       <?= $err('consent') ?>
     </div>
     <?php if ($cgv !== ''): ?><p class="hint">Voir les <a href="<?= h($cgv) ?>" target="_blank" rel="noopener">conditions générales de vente</a>.</p><?php endif ?>
+    <?php if ($preview !== ''): ?><input type="hidden" name="apercu" value="<?= h($preview) ?>" /><?php endif ?>
     <div class="hp" aria-hidden="true"><label for="website">Ne pas remplir</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
     <button class="cta terra" type="submit" style="width:100%; margin-top:22px;">Commander le livre numérique — <?= h($price) ?></button>
     <p class="hint">Vous recevrez le lien de paiement Revolut par e-mail. Le livre est personnalisé à votre nom.</p>
@@ -55,15 +58,17 @@ function ebook_message_page(string $title, string $html, int $status): never
 
 try {
     $db = db();
-    $isAdmin = admin_logged_in_if_cookie();
-    $open = ebook_sale_open($db) || $isAdmin;
     $post = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
+    $given = (string) ($post ? ($_POST['apercu'] ?? '') : ($_GET['apercu'] ?? ''));
+    $previewOk = ebook_preview_allowed($db, $given);
+    $preview = $previewOk ? $given : '';
+    $open = ebook_sale_open($db) || $previewOk;
 
     if (!$post) {
         if (!$open) {
             ebook_message_page('Bientôt disponible', '<p class="lead">Le livre numérique arrive très bientôt. En attendant, vous pouvez commander le livre papier : <a href="/panier?ajouter=1">je commande</a>.</p>', 200);
         }
-        ebook_form_page($db, [], []);
+        ebook_form_page($db, [], [], 200, $preview);
     }
 
     if (!same_origin()) ebook_message_page('Requête refusée', '<p class="lead">Origine refusée. Rechargez la page et réessayez.</p>', 403);
@@ -77,7 +82,7 @@ try {
     $r = validate_ebook_order($_POST);
     if (!$r['ok']) {
         ebook_form_page($db, ['firstName' => $r['value']['first_name'], 'lastName' => $r['value']['last_name'], 'email' => $r['value']['email'],
-            'consent' => ($_POST['consent'] ?? '') === '1' ? '1' : ''], $r['errors'], 422);
+            'consent' => ($_POST['consent'] ?? '') === '1' ? '1' : ''], $r['errors'], 422, $preview);
     }
 
     $order = create_ebook_order($db, $r['value'], ebook_price_cents($db), client_ip());

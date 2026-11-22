@@ -138,6 +138,13 @@ $log = $readLog();
 check('mail alerte : ref et nombre d\'IP', str_contains($log, 'EB-0001') && str_contains($log, '4 adresses IP')
     && str_contains($log, 'À: admin@exemple.test'));
 
+// --- Aperçu (vente fermée)
+check('aperçu : pas de clé générée par la vérification', ebook_preview_allowed($db, 'abc') === false && get_setting($db, 'ebook_apercu_cle') === null);
+$pk = ebook_preview_key($db);
+check('aperçu : clé valide acceptée', preg_match('/^[0-9a-f]{64}$/', $pk) === 1 && ebook_preview_allowed($db, $pk));
+check('aperçu : clé vide/fausse refusée', !ebook_preview_allowed($db, '') && !ebook_preview_allowed($db, str_repeat('0', 64)) && !ebook_preview_allowed($db, $pk . 'x'));
+check('aperçu : clé stable', ebook_preview_key($db) === $pk);
+
 // --- Tunnel papier intact
 $cols = array_column($db->query('PRAGMA table_info(orders)')->fetchAll(), 'name');
 check('table orders intacte', $cols === ['id', 'ref', 'token', 'created_at', 'status', 'qty', 'unit_cents', 'shipping_cents',
