@@ -1,0 +1,54 @@
+---
+// Gabarit des pages PHP publiques (merci.php…). PHP remplace %%TITLE%% et <!--%%CONTENT%%-->.
+// Copié dans _prive/ par le script de paquet : jamais servi tel quel en production.
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+---
+<Base title="%%TITLE%%" noindex>
+  <section class="section">
+    <Fragment set:html="<!--%%CONTENT%%-->" />
+  </section>
+  <!-- Icônes réutilisées par PHP (clonées depuis ce gabarit). -->
+  <template id="icons">
+    <span data-icon="map-pin"><Icon name="map-pin" size={18} /></span>
+    <span data-icon="copy"><Icon name="copy" size={18} /></span>
+  </template>
+</Base>
+
+<script>
+  // Remplace <i data-icon="x"></i> par l'icône SVG correspondante.
+  const tpl = document.querySelector<HTMLTemplateElement>('#icons');
+  document.querySelectorAll<HTMLElement>('i[data-icon]').forEach((i) => {
+    const svg = tpl?.content.querySelector(`[data-icon="${i.dataset.icon}"] svg`);
+    if (svg) i.replaceWith(svg.cloneNode(true));
+  });
+  // Boutons « copier ».
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.copy!);
+        b.dataset.done = '1';
+        b.querySelector('span')!.textContent = 'Copié ✓';
+      } catch {
+        /* presse-papiers indisponible : le texte reste affiché */
+      }
+    }),
+  );
+</script>
+
+<style is:global>
+  .ref { font-size: 15px; font-weight: 600; margin: 0 0 16px; }
+  .pay-grid { display: grid; grid-template-columns: 1fr 380px; gap: 40px; align-items: start; }
+  .howto { font-size: 17px; line-height: 1.6; padding-left: 22px; margin: 24px 0 0; }
+  .howto li + li { margin-top: 6px; }
+  .mono { font-family: ui-monospace, Consolas, monospace; background: var(--sand); padding: 1px 6px; border-radius: 6px; }
+  .hint { font-size: 14.5px; margin-top: 18px; }
+  .lead { font-size: 18px; line-height: 1.6; max-width: 60ch; }
+  .relay { display: flex; gap: 10px; margin: 18px 0 0; font-size: 15px; line-height: 1.5; }
+  .relay svg { flex: 0 0 auto; margin-top: 2px; color: var(--terra); }
+  .steps { list-style: none; display: flex; gap: 10px 26px; flex-wrap: wrap; padding: 0; margin: 0 0 34px; font-weight: 700; font-size: 15px; }
+  .steps li { display: flex; align-items: center; gap: 8px; }
+  .steps li > b { display: grid; place-content: center; width: 28px; height: 28px; border-radius: 999px; font-size: 13px; font-weight: 900; background: var(--olive); color: var(--cream); }
+  .steps li.current > b { background: var(--navy); }
+  @media (max-width: 900px) { .pay-grid { grid-template-columns: 1fr; } }
+</style>

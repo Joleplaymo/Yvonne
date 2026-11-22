@@ -1,0 +1,14 @@
+---
+// Texte modifiable depuis l'admin (/admin/textes). Le texte d'origine vient de src/content/textes.json ;
+// php/index.php remplace ce qui se trouve entre les deux commentaires par le texte enregistré.
+import catalog from '../content/textes.json';
+import { renderText } from '../lib/texte';
+
+interface Props {
+  k: string;
+}
+const { k } = Astro.props;
+const item = catalog.groups.flatMap((g) => g.items).find((i) => i.key === k);
+if (!item) throw new Error(`Texte inconnu : ${k} (à déclarer dans src/content/textes.json)`);
+---
+<Fragment set:html={`<!--t:${k}-->${renderText(item.default)}<!--/t:${k}-->`} />

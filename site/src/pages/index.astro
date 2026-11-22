@@ -1,0 +1,32 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Photo from '../components/Photo.astro';
+import T from '../components/T.astro';
+
+const buy = '/panier?ajouter=1';
+---
+<Base title="Les hormones d'Yvonne — Vanessa Gandino">
+  <!-- Les sections de l'accueil sont composées par php/index.php (mise en page modifiable dans /admin/accueil). -->
+  <Fragment set:html="<!--home-->" />
+
+  <dialog class="extract" aria-label="Extrait : quatrième de couverture">
+    <form method="dialog"><button class="close" aria-label="Fermer"><Icon name="x" /></button></form>
+    <Photo slot="extrait" alt="Quatrième de couverture : « Pour raconter une vie entière sous influence hormonale, il fallait une voix. Une voix de femme. Yvonne. »" sizes="(max-width: 760px) 92vw, 480px" />
+    <a class="cta" href={buy} style="margin-top:18px; width:100%;"><T k="bouton_principal" /></a>
+  </dialog>
+</Base>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('dialog.extract');
+  document.querySelectorAll('[data-open-extract]').forEach((b) => b.addEventListener('click', () => dialog?.showModal()));
+  dialog?.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+</script>
+
+<style>
+  .extract { border: none; border-radius: 16px; padding: 22px; width: min(520px, 94vw); max-width: none; max-height: 94vh; background: var(--cream); }
+  .extract::backdrop { background: rgba(14, 30, 50, 0.7); }
+  .extract :global(img) { width: 100%; border-radius: 4px; }
+  .close { position: sticky; top: 0; float: right; margin: -8px -8px 8px 8px; width: 44px; height: 44px; border-radius: 999px; border: none; background: var(--navy); color: var(--cream); cursor: pointer; display: grid; place-content: center; }
+</style>

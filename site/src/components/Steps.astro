@@ -1,0 +1,23 @@
+---
+interface Props {
+  current: 1 | 2 | 3;
+}
+const { current } = Astro.props;
+const steps = ['Panier', 'Livraison & coordonnées', 'Paiement'];
+---
+<ol class="steps" aria-label="Étapes de la commande">
+  {steps.map((label, i) => (
+    <li class:list={{ done: i + 1 < current, current: i + 1 === current }} aria-current={i + 1 === current ? 'step' : undefined}>
+      <span>{i + 1}</span>{label}
+    </li>
+  ))}
+</ol>
+
+<style>
+  .steps { list-style: none; display: flex; gap: 10px 26px; flex-wrap: wrap; padding: 0; margin: 0 0 34px; font-weight: 700; font-size: 15px; }
+  li { display: flex; align-items: center; gap: 8px; opacity: 0.55; }
+  li.current, li.done { opacity: 1; }
+  span { display: grid; place-content: center; width: 28px; height: 28px; border-radius: 999px; border: 2px solid var(--navy); font-size: 13px; font-weight: 900; }
+  li.current span { background: var(--navy); color: var(--cream); }
+  li.done span { background: var(--olive); border-color: var(--olive); color: var(--cream); }
+</style>
