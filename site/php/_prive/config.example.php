@@ -37,6 +37,8 @@ return [
     'smtp_password' => '',
     'mail_from' => 'contact@vanessagandino.fr',
     'mail_from_name' => 'Vanessa Gandino',
+    // Reçoit les avis d'achat par défaut ; /admin/notifications peut le remplacer pour ces avis.
+    // Le Reply-To des mails clients utilise toujours cette adresse.
     'admin_email' => 'contact@vanessagandino.fr',
 
     // --- Administration (/admin) ---

@@ -6,6 +6,10 @@ declare(strict_types=1);
 
 function send_mail(string $to, string $subject, string $body): bool
 {
+    if (preg_match('/[\r\n]/', $to)) {
+        error_log('[mail] destinataire refusé (retour à la ligne) : envoi annulé');
+        return false;
+    }
     $c = cfg();
     try {
         return match ($c['mail_mode']) {
@@ -134,13 +138,11 @@ Suivre votre commande : " . order_page_url($o) . "
 
 Hormonalement vôtre,
 Vanessa");
-    if ($c['admin_email'] !== '') {
-        send_mail($c['admin_email'], "Nouvelle commande {$o['ref']} — " . eur($o['total_cents']), mail_recap($o) . "
+    notify_admins("Nouvelle commande {$o['ref']} — " . eur($o['total_cents']), mail_recap($o) . "
 
 Client : {$o['first_name']} {$o['last_name']} — {$o['email']} — {$o['phone']}
 " . ($o['note'] !== '' ? "Message : {$o['note']}\n" : '') . "
 Admin : {$c['public_base_url']}/admin/{$o['ref']}");
-    }
 }
 
 function mail_order_paid(array $o): void
@@ -197,14 +199,12 @@ Suivre votre commande : " . ebook_order_page_url($o) . "
 
 Hormonalement vôtre,
 Vanessa");
-    if ($c['admin_email'] !== '') {
-        send_mail($c['admin_email'], "Nouvelle commande numérique {$o['ref']} — $price", "Commande {$o['ref']} — livre numérique — $price
+    notify_admins("Nouvelle commande numérique {$o['ref']} — $price", "Commande {$o['ref']} — livre numérique — $price
 
 Client : {$o['first_name']} {$o['last_name']} — {$o['email']}
 Consentement : " . fr_date($o['consent_at'], true) . " (IP {$o['consent_ip']})
 
 Admin : {$c['public_base_url']}/admin/{$o['ref']}");
-    }
 }
 
 /** Renvoie false si l'envoi a échoué (la commande est déjà livrée : l'admin peut renvoyer un lien). */
@@ -226,9 +226,114 @@ Vanessa");
 function mail_ebook_share_alert(array $o, int $ips): void
 {
     $c = cfg();
-    if ($c['admin_email'] === '') return;
-    send_mail($c['admin_email'], "Alerte partage possible — {$o['ref']}", "Le lien de téléchargement de la commande {$o['ref']} ({$o['first_name']} {$o['last_name']}, {$o['email']}) a été utilisé depuis $ips adresses IP différentes.
+    notify_admins("Alerte partage possible — {$o['ref']}", "Le lien de téléchargement de la commande {$o['ref']} ({$o['first_name']} {$o['last_name']}, {$o['email']}) a été utilisé depuis $ips adresses IP différentes.
 
 C'est peut-être un partage du lien. Vous pouvez le vérifier ou annuler la commande dans l'admin :
 {$c['public_base_url']}/admin/{$o['ref']}");
+}
+
+// ---------------------------------------------------------------- Adresses de notification
+
+const NOTIFY_SETTING = 'notify_emails';
+const NOTIFY_MAX = 3;
+
+/** Analyse une saisie (une adresse par ligne) : liste nettoyée, sans doublon (insensible à la casse). */
+function notify_parse(string $raw): array
+{
+    $emails = [];
+    $seen = [];
+    foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
+        $line = trim($line);
+        if ($line === '') continue;
+        if (strlen($line) > 254 || !filter_var($line, FILTER_VALIDATE_EMAIL)) {
+            return ['ok' => false, 'error' => "Adresse invalide : $line"];
+        }
+        $k = strtolower($line);
+        if (isset($seen[$k])) continue;
+        $seen[$k] = true;
+        $emails[] = $line;
+    }
+    if (count($emails) > NOTIFY_MAX) {
+        return ['ok' => false, 'error' => 'Trois adresses au maximum.'];
+    }
+    return ['ok' => true, 'emails' => $emails];
+}
+
+function notify_config_emails(): array
+{
+    $a = cfg()['admin_email'];
+    return $a !== '' ? [$a] : [];
+}
+
+/** Adresses effectives : réglage s'il existe, sinon config.php. Toute erreur → config. */
+function notify_emails(?PDO $db = null): array
+{
+    try {
+        $raw = get_setting($db ?? db(), NOTIFY_SETTING);
+        if ($raw !== null) {
+            $p = notify_parse($raw);
+            if ($p['ok'] && $p['emails'] !== []) return $p['emails'];
+        }
+    } catch (Throwable $e) {
+        error_log('[mail] lecture notify_emails impossible, repli config.php : ' . $e->getMessage());
+    }
+    return notify_config_emails();
+}
+
+function notify_custom(PDO $db): bool
+{
+    $raw = get_setting($db, NOTIFY_SETTING);
+    if ($raw === null) return false;
+    $p = notify_parse($raw);
+    return $p['ok'] && $p['emails'] !== [];
+}
+
+function notify_save(PDO $db, array $emails, string $ip): void
+{
+    $p = notify_parse(implode("\n", $emails));
+    if (!$p['ok']) throw new InvalidArgumentException($p['error']);
+    $emails = $p['emails'];
+    $old = notify_emails($db);
+    if ($emails === []) {
+        notify_reset($db, $ip);
+        return;
+    }
+    set_setting($db, NOTIFY_SETTING, implode("\n", $emails));
+    notify_change_alert($old, notify_emails($db), false, $ip);
+}
+
+function notify_reset(PDO $db, string $ip): void
+{
+    $old = notify_emails($db);
+    delete_setting($db, NOTIFY_SETTING);
+    notify_change_alert($old, notify_emails($db), true, $ip);
+}
+
+/** Prévient les anciennes adresses d'un changement (aucun mail si la liste effective est identique). */
+function notify_change_alert(array $old, array $new, bool $reset, string $ip): void
+{
+    $norm = static fn(array $l): array => array_map('strtolower', $l);
+    if ($norm($old) === $norm($new)) return;
+    $list = $new === [] ? 'aucune' : implode(', ', $new);
+    $what = $reset ? 'adresse de config.php : ' . $list : $list;
+    $body = "Les adresses qui reçoivent les avis d'achat ont été modifiées.
+
+Nouvelles adresses : $what
+Date : " . fr_date(now_iso(), true) . "
+IP : $ip
+
+Si ce n'est pas vous, vérifiez l'administration du site.";
+    foreach ($old as $to) {
+        send_mail($to, "Adresses de notification modifiées — Les hormones d'Yvonne", $body);
+    }
+}
+
+/** Envoie un avis à chaque adresse de notification ; renvoie le nombre d'envois réussis. */
+function notify_admins(string $subject, string $body): int
+{
+    $n = 0;
+    foreach (notify_emails() as $to) {
+        if (send_mail($to, $subject, $body)) $n++;
+    }
+    return $n;
 }
