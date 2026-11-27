@@ -290,8 +290,7 @@ function notify_custom(PDO $db): bool
 
 function notify_save(PDO $db, array $emails, string $ip): void
 {
-    $p = notify_parse(implode("
-", $emails));
+    $p = notify_parse(implode("\n", $emails));
     if (!$p['ok']) throw new InvalidArgumentException($p['error']);
     $emails = $p['emails'];
     $old = notify_emails($db);
