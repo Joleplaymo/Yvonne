@@ -36,7 +36,8 @@ check('parse : 4 adresses refusées', notify_parse("a@x.fr\nb@x.fr\nc@x.fr\nd@x.
 check('parse : vide accepté', notify_parse('') === ['ok' => true, 'emails' => []]);
 check('parse : injection d\'en-tête refusée', notify_parse("a@x.fr\r\nBcc: z@z.fr")['ok'] === false);
 
-check('parse : 255 caractères refusés', notify_parse(str_repeat('a', 245) . '@example.fr')['ok'] === false);
+$tooLong = str_repeat('a', 64) . '@' . str_repeat('b', 63) . '.' . str_repeat('c', 63) . '.' . str_repeat('d', 60) . '.fr';
+check('parse : plus de 254 caractères refusés', strlen($tooLong) >= 255 && strlen($tooLong) <= 320 && notify_parse($tooLong)['ok'] === false);
 $long = str_repeat('a', 64) . '@' . str_repeat('b', 63) . '.' . str_repeat('c', 63) . '.fr';
 check('parse : adresse de 254 caractères au plus', strlen($long) <= 254 && notify_parse($long)['ok'] === true);
 

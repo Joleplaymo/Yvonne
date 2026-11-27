@@ -274,7 +274,8 @@ function notify_emails(?PDO $db = null): array
             $p = notify_parse($raw);
             if ($p['ok'] && $p['emails'] !== []) return $p['emails'];
         }
-    } catch (Throwable) {
+    } catch (Throwable $e) {
+        error_log('[mail] lecture notify_emails impossible, repli config.php : ' . $e->getMessage());
     }
     return notify_config_emails();
 }

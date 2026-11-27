@@ -16,7 +16,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 notify_save($db, $r['emails'], client_ip());
                 $_SESSION['notif_msg'] = $r['emails'] === []
                     ? ['ok', 'Retour à l’adresse du fichier de configuration.']
-                    : ['ok', 'Adresses enregistrées : les prochains avis d’achat leur seront envoyés.'];
+                    : ['ok', 'Adresses enregistrées : les prochains avis d’achat leur seront envoyés. Envoyez un mail de test pour vérifier.'];
             } catch (InvalidArgumentException $e) {
                 $_SESSION['notif_msg'] = ['error', $e->getMessage()];
                 $_SESSION['notif_form'] = $raw;
@@ -30,11 +30,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if (rate_limited($db, 'notify-test', 5, 600)) {
             $_SESSION['notif_msg'] = ['error', 'Trop de mails de test. Réessayez dans 10 minutes.'];
         } else {
+            $m = count(notify_emails($db));
+            if ($m === 0) {
+                $_SESSION['notif_msg'] = ['error', 'Aucune adresse configurée : renseignez-en une ou définissez admin_email dans config.php.'];
+                header('Location: /admin/notifications', true, 303);
+                exit;
+            }
             $n = notify_admins(
                 'Test des notifications — Les hormones d\'Yvonne',
                 "Ceci est un mail de test.\n\nLes notifications du site (nouvelles commandes, alertes) arrivent bien à cette adresse."
             );
-            $m = count(notify_emails($db));
             $_SESSION['notif_msg'] = ['ok', "Mail de test envoyé à $n adresse(s) sur $m."];
         }
     } elseif ($action === 'reset') {
