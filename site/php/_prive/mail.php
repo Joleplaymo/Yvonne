@@ -245,7 +245,7 @@ function notify_parse(string $raw): array
     foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
         $line = trim($line);
         if ($line === '') continue;
-        if (!filter_var($line, FILTER_VALIDATE_EMAIL)) {
+        if (strlen($line) > 254 || !filter_var($line, FILTER_VALIDATE_EMAIL)) {
             return ['ok' => false, 'error' => "Adresse invalide : $line"];
         }
         $k = strtolower($line);
@@ -281,11 +281,18 @@ function notify_emails(?PDO $db = null): array
 
 function notify_custom(PDO $db): bool
 {
-    return get_setting($db, NOTIFY_SETTING) !== null;
+    $raw = get_setting($db, NOTIFY_SETTING);
+    if ($raw === null) return false;
+    $p = notify_parse($raw);
+    return $p['ok'] && $p['emails'] !== [];
 }
 
 function notify_save(PDO $db, array $emails, string $ip): void
 {
+    $p = notify_parse(implode("
+", $emails));
+    if (!$p['ok']) throw new InvalidArgumentException($p['error']);
+    $emails = $p['emails'];
     $old = notify_emails($db);
     if ($emails === []) {
         notify_reset($db, $ip);
