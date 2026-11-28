@@ -41,6 +41,7 @@ site/
 - **Export CSV** (Excel FR).
 - **Livraison** (`/admin/livraison`) : frais de port par paliers (« à partir de N livres → prix »), aperçu de ce que paie le client pour 1 à 6 livres. Les nouveaux frais s'appliquent immédiatement aux nouvelles commandes ; ils priment sur `shipping_table` de `config.php` (bouton pour y revenir).
 - **Notifications** (`/admin/notifications`) : jusqu'à 3 adresses qui reçoivent les avis d'achat et alertes (une par ligne). Sans réglage, on retombe sur `admin_email` de `config.php` (bouton pour y revenir). Bouton « Envoyer un mail de test » (5 par 10 minutes). Quand la liste change, les anciennes adresses reçoivent une alerte. Le `Reply-To` des mails clients reste l'`admin_email` de `config.php`.
+- **Paiement** (`/admin/paiement`) : lien Revolut du livre papier (avec `{amount}` si Revolut accepte un montant prérempli), lien d'essai à 1,00 €, et lien epub à montant fixe facultatif. Si le prix de l'epub change, ce lien n'est plus utilisé jusqu'à ce qu'un nouveau lien soit collé. Sans réglage, on retombe sur `revolut_link_template` de `config.php`. Chaque changement envoie une alerte aux adresses de notification.
 - **Photos** (`/admin/photos`) : remplacer la couverture, le portrait, l'extrait ou le logo partenaire en choisissant un fichier (JPEG, PNG, WebP, GIF, 15 Mo max).
   L'image est redimensionnée, convertie et débarrassée de ses métadonnées automatiquement, puis visible sur le site en 5 minutes au plus.
   « Rétablir l'originale » revient à la photo livrée avec le site.
@@ -141,7 +142,7 @@ Les tests tournent pendant le build. Sauvegarde : `./scripts/backup.sh` (cron co
 ## Points à connaître
 
 - **Revolut** : `revolut.me` ne prévient pas le site d'un paiement. La confirmation reste manuelle (bouton dans l'admin).
-  Si votre lien accepte un montant prérempli (à tester, par ex. `https://revolut.me/v_gandino/{amount}EUR`), mettez-le dans `revolut_link_template`.
+  Si votre lien accepte un montant prérempli (à tester, par ex. `https://revolut.me/v_gandino/{amount}EUR`), mettez-le dans `revolut_link_template`. Il se règle aussi depuis `/admin/paiement`, qui prime sur `config.php`.
 - **Mondial Relay** : la carte demande un code enseigne (compte pro). Sans lui, la saisie manuelle fonctionne.
 - **E-mails** : la boîte Hostinger `contact@vanessagandino.fr` sert d'expéditeur SMTP (`smtp.hostinger.com:465`).
 
@@ -158,5 +159,6 @@ Les tests tournent pendant le build. Sauvegarde : `./scripts/backup.sh` (cron co
 - [ ] Ouvrir l'epub tatoué (« Tester le tatouage ») avec `epubcheck`, ou dans Calibre, Apple Books et Kobo.
 - [ ] Commande réelle à 4,99 € via le lien d'aperçu, jusqu'à la réception du mail et du fichier.
 - [ ] Depuis l'extérieur : `curl -sI https://<site>/telecharger/<jeton>` (HEAD, ne compte jamais) doit montrer pour la page `Cache-Control: no-store` (qui doit survivre au CDN : une 2e requête ne doit pas venir du cache), `X-Robots-Tag`, `Referrer-Policy` et `Strict-Transport-Security`. Pour les en-têtes du fichier (`application/epub+zip`, `Content-Disposition`, `Cache-Control: private, no-store, max-age=0`), faire un vrai téléchargement depuis un navigateur, ou `curl -s -D- -o /dev/null -X POST https://<site>/telecharger/<jeton>` : cela compte 1 téléchargement.
+- [ ] Si un lien epub à montant fixe est utilisé : le payer deux fois depuis deux comptes différents et vérifier que chaque payeur peut ajouter la référence EB-xxxx dans le message du paiement, et que Vanessa voit le nom du payeur et la référence. Sinon, retirer le lien fixe dans `/admin/paiement`.
 - [ ] CGV en ligne et adresse renseignée dans `/admin/epub`.
 - [ ] Statut TVA vérifié (franchise en base ou TVA à facturer sur le numérique).

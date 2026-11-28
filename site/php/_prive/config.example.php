@@ -13,6 +13,7 @@ return [
     // Frais de port Mondial Relay par quantité minimale : 1 livre 4,90 €, 2-3 livres 5,90 €, dès 4 livres 7,50 €.
     'shipping_table' => '1:4.90,2:5.90,4:7.50',
     // Lien Revolut. {amount} = montant (ex. 35.90), {ref} = référence (ex. YV-0007).
+    // Peut être remplacé depuis /admin/paiement (le réglage de l'admin prime).
     'revolut_link_template' => 'https://revolut.me/v_gandino',
     // Code enseigne Mondial Relay pour la carte. Vide = saisie manuelle du point relais.
     'mr_brand' => '',
