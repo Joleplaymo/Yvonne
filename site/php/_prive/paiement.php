@@ -18,7 +18,7 @@ function pay_link_check(string $link, bool $fixed): ?string
 {
     if ($link === '') return null;
     if (strlen($link) > PAY_LINK_MAX) return 'Le lien est trop long (300 caractères au maximum).';
-    if (!preg_match('~^https://(?:revolut\.me|(?:[a-z0-9-]+\.)*revolut\.com)(?:[/?#]\S*)?$~Di', $link)) {
+    if (!preg_match('~^https://(?:revolut\.me|(?:[a-z0-9-]+\.)*revolut\.com)(?:[/?#][!-}\~]*)?$~Di', $link)) {
         return 'Le lien doit commencer par https:// et pointer vers revolut.me ou revolut.com, sans espace.';
     }
     if ($fixed) {
@@ -74,7 +74,7 @@ function pay_link_ebook(int $cents, string $ref, ?PDO $db = null): array
 function pay_ebook_fixed_status(PDO $db, int $currentCents): string
 {
     $fixed = get_setting($db, PAY_LINK_EBOOK);
-    if ($fixed === null || $fixed === '') return 'none';
+    if ($fixed === null || $fixed === '' || pay_link_check($fixed, true) !== null) return 'none';
     return get_setting($db, PAY_LINK_EBOOK_CENTS) === (string) $currentCents ? 'ok' : 'stale';
 }
 
@@ -92,18 +92,27 @@ function pay_save(PDO $db, string $link, string $ebookLink, int $ebookCents, str
 
     $old = ['paper' => pay_template($db), 'ebook' => trim((string) get_setting($db, PAY_LINK_EBOOK))];
 
-    if ($link === '') delete_setting($db, PAY_LINK);
-    else set_setting($db, PAY_LINK, $link);
+    // Transaction : le lien fixe et ses centimes sont écrits ensemble ou pas du tout.
+    $db->beginTransaction();
+    try {
+        if ($link === '') delete_setting($db, PAY_LINK);
+        else set_setting($db, PAY_LINK, $link);
 
-    if ($ebookLink === '') {
-        delete_setting($db, PAY_LINK_EBOOK);
-        delete_setting($db, PAY_LINK_EBOOK_CENTS);
-    } elseif ($ebookLink !== $old['ebook']) {
-        set_setting($db, PAY_LINK_EBOOK, $ebookLink);
-        set_setting($db, PAY_LINK_EBOOK_CENTS, (string) $ebookCents);
+        if ($ebookLink === '') {
+            delete_setting($db, PAY_LINK_EBOOK);
+            delete_setting($db, PAY_LINK_EBOOK_CENTS);
+        } elseif ($ebookLink !== $old['ebook']) {
+            set_setting($db, PAY_LINK_EBOOK, $ebookLink);
+            set_setting($db, PAY_LINK_EBOOK_CENTS, (string) $ebookCents);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        throw $e;
     }
 
     $new = ['paper' => pay_template($db), 'ebook' => trim((string) get_setting($db, PAY_LINK_EBOOK))];
+    // notify_admins() est défini dans mail.php : l'appelant doit l'avoir chargé.
     if ($old !== $new) pay_change_alert($old, $new, $ip);
 }
 

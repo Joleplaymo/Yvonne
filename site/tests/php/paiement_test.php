@@ -36,7 +36,7 @@ check('check fixe valide', pay_link_check('https://checkout.revolut.com/pay/abc'
 check('check fixe vide', pay_link_check('', true) === null);
 foreach (['http://revolut.me/x', 'https://revolut.me.evil.com/x', 'https://evil.com/?revolut.me', 'https://x@revolut.me/y',
     'https://revolut.me:8443/x', 'javascript:alert(1)', 'https://revolut.me/x {amount}', "https://revolut.me/x\n",
-    'https://revolut.me/{foo}', 'https://revolut.me/' . str_repeat('a', 300)] as $bad) {
+    'https://revolut.me/{foo}', "https://revolut.me/x\x00", "https://revolut.me/x\x1b[2J", "https://revolut.me/x\x7f", "https://revolut.me/x\xC2\xA0y", 'https://revolut.me/' . str_repeat('a', 300)] as $bad) {
     $err = pay_link_check($bad, false);
     check('check refusé : ' . substr(addcslashes($bad, "\n"), 0, 40), is_string($err) && $err !== '');
 }
@@ -89,6 +89,13 @@ check('save invalide : exception, rien changé', $threw && pay_link_paper(100, '
 $threw = false;
 try { pay_save($db, 'https://revolut.me/ok', 'https://revolut.me/x/{amount}', 499, 'ip'); } catch (InvalidArgumentException) { $threw = true; }
 check('save lien fixe invalide : exception, rien changé', $threw && pay_link_paper(100, 'T', $db)['url'] === 'https://revolut.me/x');
+
+// --- Ligne corrompue en base : statut none, repli sur le modèle
+set_setting($db, PAY_LINK_EBOOK, 'http://evil.test');
+set_setting($db, PAY_LINK_EBOOK_CENTS, '499');
+check('lien fixe corrompu : statut none et repli', pay_ebook_fixed_status($db, 499) === 'none'
+    && pay_link_ebook(499, 'EB-0001', $db)['url'] === pay_template($db));
+$readLog();
 
 // --- Réinitialisation
 pay_save($db, '', '', 499, 'ip');
