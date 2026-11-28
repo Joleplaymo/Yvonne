@@ -87,8 +87,8 @@ function pay_save(PDO $db, string $link, string $ebookLink, int $ebookCents, str
 {
     $link = trim($link);
     $ebookLink = trim($ebookLink);
-    if (($e = pay_link_check($link, false)) !== null) throw new InvalidArgumentException($e);
-    if (($e = pay_link_check($ebookLink, true)) !== null) throw new InvalidArgumentException($e);
+    if (($e = pay_link_check($link, false)) !== null) throw new InvalidArgumentException('Lien Revolut : ' . $e);
+    if (($e = pay_link_check($ebookLink, true)) !== null) throw new InvalidArgumentException('Lien epub : ' . $e);
 
     $old = ['paper' => pay_template($db), 'ebook' => trim((string) get_setting($db, PAY_LINK_EBOOK))];
 

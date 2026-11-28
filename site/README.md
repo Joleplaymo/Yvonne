@@ -159,5 +159,6 @@ Les tests tournent pendant le build. Sauvegarde : `./scripts/backup.sh` (cron co
 - [ ] Ouvrir l'epub tatoué (« Tester le tatouage ») avec `epubcheck`, ou dans Calibre, Apple Books et Kobo.
 - [ ] Commande réelle à 4,99 € via le lien d'aperçu, jusqu'à la réception du mail et du fichier.
 - [ ] Depuis l'extérieur : `curl -sI https://<site>/telecharger/<jeton>` (HEAD, ne compte jamais) doit montrer pour la page `Cache-Control: no-store` (qui doit survivre au CDN : une 2e requête ne doit pas venir du cache), `X-Robots-Tag`, `Referrer-Policy` et `Strict-Transport-Security`. Pour les en-têtes du fichier (`application/epub+zip`, `Content-Disposition`, `Cache-Control: private, no-store, max-age=0`), faire un vrai téléchargement depuis un navigateur, ou `curl -s -D- -o /dev/null -X POST https://<site>/telecharger/<jeton>` : cela compte 1 téléchargement.
+- [ ] Si un lien epub à montant fixe est utilisé : le payer deux fois depuis deux comptes différents et vérifier que chaque payeur peut ajouter la référence EB-xxxx dans le message du paiement, et que Vanessa voit le nom du payeur et la référence. Sinon, retirer le lien fixe dans `/admin/paiement`.
 - [ ] CGV en ligne et adresse renseignée dans `/admin/epub`.
 - [ ] Statut TVA vérifié (franchise en base ou TVA à facturer sur le numérique).

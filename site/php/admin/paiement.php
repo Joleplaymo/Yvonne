@@ -51,16 +51,16 @@ ob_start();
       <input type="hidden" name="action" value="save">
       <div class="field">
         <label for="link">Lien Revolut (livre papier)</label>
-        <input id="link" name="link" type="text" maxlength="300" style="width:100%;" value="<?= h($linkValue) ?>">
+        <input id="link" name="link" type="text" style="width:100%;" value="<?= h($linkValue) ?>">
         <?php if ($stored === ''): ?><span class="hint">Lien en vigueur : <?= h(cfg()['revolut_link_template']) ?> (valeur de config.php)</span><?php endif ?>
         <span class="hint">Ajoutez {amount} à l'endroit où le montant doit apparaître, par exemple https://revolut.me/votre-nom/{amount}EUR, puis testez. Si Revolut n'affiche pas le montant, retirez {amount}.</span>
       </div>
       <div class="field">
         <label for="ebook_link">Lien epub à montant fixe (facultatif)</label>
-        <input id="ebook_link" name="ebook_link" type="text" maxlength="300" style="width:100%;" value="<?= h($ebookValue) ?>">
+        <input id="ebook_link" name="ebook_link" type="text" style="width:100%;" value="<?= h($ebookValue) ?>">
         <span class="hint">Créez dans l'appli Revolut un lien de paiement de <?= h(eur($price)) ?> puis collez-le ici. Laissez vide pour utiliser le lien ci-dessus.</span>
         <?php if ($status === 'stale'): ?>
-          <p class="notice error">Ce lien a été créé pour <?= h(eur((int) $storedCents)) ?> alors que l'epub coûte <?= h(eur($price)) ?> : il n'est plus utilisé. Créez un nouveau lien dans Revolut au prix actuel et collez-le ici.</p>
+          <p class="notice error">Ce lien a été créé pour <?= h(eur((int) $storedCents)) ?> alors que l'epub coûte <?= h(eur($price)) ?> : il n'est plus utilisé. Créez dans Revolut un nouveau lien (pas le même) au prix actuel, puis collez-le ici.</p>
         <?php endif ?>
       </div>
       <button class="cta">Enregistrer</button>
@@ -71,7 +71,7 @@ ob_start();
   <section class="panel">
     <h2>Lien d'essai</h2>
     <p><a href="<?= h($test['url']) ?>" target="_blank" rel="noopener">Ouvrir le lien d'essai (1,00 €)</a></p>
-    <p class="hint">Ouvrez-le sur votre téléphone : le montant de 1,00 € doit apparaître<?= $test['prefilled'] ? '' : ' (le lien en vigueur ne contient pas {amount} : le client devra saisir le montant)' ?>. Enregistrez avant de tester.</p>
+    <p class="hint">Enregistrez avant de tester. Ouvrez le lien sur votre téléphone<?= $test['prefilled'] ? ' : le montant de 1,00 € doit apparaître.' : '. Revolut s’ouvrira sans montant : le client devra saisir le montant.' ?></p>
     <p class="hint"><a href="/admin/epub">Prix de l'epub</a> · <a href="/admin">← Commandes</a></p>
   </section>
 </div>

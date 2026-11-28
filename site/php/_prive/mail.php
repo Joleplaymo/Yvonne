@@ -124,14 +124,16 @@ function mail_recap(array $o): string
 function mail_order_created(array $o): void
 {
     $c = cfg();
-    $pay = pay_link_paper((int) $o['total_cents'], $o['ref'])['url'];
+    $l = pay_link_paper((int) $o['total_cents'], $o['ref']);
+    $pay = $l['url'];
+    $filled = $l['prefilled'] ? ' (montant déjà rempli)' : '';
     send_mail($o['email'], "Votre commande {$o['ref']} — Les hormones d'Yvonne", "Bonjour {$o['first_name']},
 
 Merci pour votre commande ! Elle sera expédiée dès réception du paiement.
 
 " . mail_recap($o) . "
 
-Pour régler " . eur($o['total_cents']) . " avec Revolut :
+Pour régler " . eur($o['total_cents']) . " avec Revolut$filled :
 $pay
 Merci d'indiquer la référence {$o['ref']} dans le message du paiement.
 
@@ -179,7 +181,9 @@ Vanessa");
 function mail_ebook_created(array $o): void
 {
     $c = cfg();
-    $pay = pay_link_ebook((int) $o['price_cents'], $o['ref'])['url'];
+    $l = pay_link_ebook((int) $o['price_cents'], $o['ref']);
+    $pay = $l['url'];
+    $filled = $l['prefilled'] ? ' (montant déjà rempli)' : '';
     $price = eur((int) $o['price_cents']);
     send_mail($o['email'], "Votre commande {$o['ref']} — Les hormones d'Yvonne (livre numérique)", "Bonjour {$o['first_name']},
 
@@ -189,7 +193,7 @@ Adresse erronée ? Répondez à ce message en indiquant la référence {$o['ref'
 
 Commande {$o['ref']} — $price
 
-Pour régler $price avec Revolut :
+Pour régler $price avec Revolut$filled :
 $pay
 Merci d'indiquer la référence {$o['ref']} dans le message du paiement.
 

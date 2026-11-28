@@ -29,14 +29,15 @@ $readLog = static function () use ($logFile): string {
 };
 
 // --- Validation
-foreach (['https://revolut.me/v_gandino', 'https://revolut.me/x/{amount}EUR?r={ref}', 'https://checkout.revolut.com/pay/abc', ''] as $ok) {
+foreach (['https://revolut.me/v_gandino', 'https://revolut.me/x/{amount}EUR?r={ref}', 'https://checkout.revolut.com/pay/abc', 'https://REVOLUT.ME/x', 'https://revolut.me', ''] as $ok) {
     check("check valide : $ok", pay_link_check($ok, false) === null);
 }
 check('check fixe valide', pay_link_check('https://checkout.revolut.com/pay/abc', true) === null);
 check('check fixe vide', pay_link_check('', true) === null);
 foreach (['http://revolut.me/x', 'https://revolut.me.evil.com/x', 'https://evil.com/?revolut.me', 'https://x@revolut.me/y',
     'https://revolut.me:8443/x', 'javascript:alert(1)', 'https://revolut.me/x {amount}', "https://revolut.me/x\n",
-    'https://revolut.me/{foo}', "https://revolut.me/x\x00", "https://revolut.me/x\x1b[2J", "https://revolut.me/x\x7f", "https://revolut.me/x\xC2\xA0y", 'https://revolut.me/' . str_repeat('a', 300)] as $bad) {
+    'https://revolut.me/{foo}', "https://revolut.me/x\x00", "https://revolut.me/x\x1b[2J", "https://revolut.me/x\x7f", "https://revolut.me/x\xC2\xA0y", 'https://revolut.me/' . str_repeat('a', 300),
+    'https://revolut.com@evil.com/x', 'https://revolut.me%2eevil.com/x', 'https://evil.com#.revolut.com', 'https://revolut.me./x'] as $bad) {
     $err = pay_link_check($bad, false);
     check('check refusé : ' . substr(addcslashes($bad, "\n"), 0, 40), is_string($err) && $err !== '');
 }
@@ -119,7 +120,16 @@ $po = create_order($db, ['qty' => 1, 'first_name' => 'Yvonne', 'last_name' => 'D
     ['qty' => 1, 'unit_cents' => 1000, 'shipping_cents' => 490, 'total_cents' => 1490]);
 $readLog();
 mail_order_created($po);
-check('mail papier : lien résolu', str_contains($readLog(), 'https://revolut.me/x/14.90EUR'));
+$log = $readLog();
+check('mail papier : lien résolu', str_contains($log, 'https://revolut.me/x/14.90EUR'));
+check('mail papier : montant déjà rempli', str_contains($log, 'montant déjà rempli'));
+mail_ebook_created($eo);
+check('mail epub : montant déjà rempli', str_contains($readLog(), 'montant déjà rempli'));
+pay_save($db, 'https://revolut.me/x', '', 499, 'ip');
+$readLog();
+mail_order_created($po);
+$log = $readLog();
+check('mail papier sans {amount} : inchangé', !str_contains($log, 'montant déjà rempli') && str_contains($log, 'avec Revolut :'));
 
 echo $fails === 0 ? "OK — $count vérifications.\n" : "$fails échec(s) sur $count.\n";
 exit($fails === 0 ? 0 : 1);
