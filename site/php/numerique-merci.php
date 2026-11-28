@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/_prive/lib.php';
 require_once __DIR__ . '/_prive/ebook.php';
+require_once __DIR__ . '/_prive/paiement.php';
 
 $ref = (string) ($_GET['ref'] ?? '');
 $token = (string) ($_GET['t'] ?? '');
@@ -18,9 +19,9 @@ if (!$order) {
 }
 
 $o = $order;
-$template = cfg()['revolut_link_template'];
-$pay = revolut_link($template, (int) $o['price_cents'], $o['ref']);
-$amountInLink = str_contains($template, '{amount}');
+$link = pay_link_ebook((int) $o['price_cents'], $o['ref']);
+$pay = $link['url'];
+$amountInLink = $link['prefilled'];
 $price = eur((int) $o['price_cents']);
 $waiting = $o['status'] === 'attente_paiement';
 $delivered = $o['status'] === 'livree';

@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/paiement.php';
 
 // Envoi des e-mails : SMTP (SSL 465 ou STARTTLS 587), mail() de l'hébergeur, ou journal seulement.
 // Une panne d'envoi ne fait jamais échouer une commande : elle est déjà enregistrée.
@@ -123,7 +124,7 @@ function mail_recap(array $o): string
 function mail_order_created(array $o): void
 {
     $c = cfg();
-    $pay = revolut_link($c['revolut_link_template'], $o['total_cents'], $o['ref']);
+    $pay = pay_link_paper((int) $o['total_cents'], $o['ref'])['url'];
     send_mail($o['email'], "Votre commande {$o['ref']} — Les hormones d'Yvonne", "Bonjour {$o['first_name']},
 
 Merci pour votre commande ! Elle sera expédiée dès réception du paiement.
@@ -178,7 +179,7 @@ Vanessa");
 function mail_ebook_created(array $o): void
 {
     $c = cfg();
-    $pay = revolut_link($c['revolut_link_template'], (int) $o['price_cents'], $o['ref']);
+    $pay = pay_link_ebook((int) $o['price_cents'], $o['ref'])['url'];
     $price = eur((int) $o['price_cents']);
     send_mail($o['email'], "Votre commande {$o['ref']} — Les hormones d'Yvonne (livre numérique)", "Bonjour {$o['first_name']},
 

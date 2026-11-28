@@ -6,7 +6,7 @@ const run = (args) =>
 
 const failed = [];
 run(['compose', '-f', 'docker-compose.dev.yml', 'build', '-q', 'php']);
-for (const test of ['tests/php/lib_test.php', 'tests/php/ebook_test.php', 'tests/php/ebook_admin_test.php', 'tests/php/notifications_test.php', 'tests/php/epub_test.php', 'tests/php/telechargement_test.php', 'tests/php/photos_test.php', 'tests/php/textes_test.php', 'tests/php/couleurs_test.php', 'tests/php/accueil_test.php', 'tests/php/entete_test.php', 'tests/php/seo_test.php', 'tests/php/favicon_test.php']) {
+for (const test of ['tests/php/lib_test.php', 'tests/php/ebook_test.php', 'tests/php/ebook_admin_test.php', 'tests/php/notifications_test.php', 'tests/php/paiement_test.php', 'tests/php/epub_test.php', 'tests/php/telechargement_test.php', 'tests/php/photos_test.php', 'tests/php/textes_test.php', 'tests/php/couleurs_test.php', 'tests/php/accueil_test.php', 'tests/php/entete_test.php', 'tests/php/seo_test.php', 'tests/php/favicon_test.php']) {
   try {
     run([
       'compose', '-f', 'docker-compose.dev.yml', 'run', '--rm', '--no-deps',

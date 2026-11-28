@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/_prive/lib.php';
+require_once __DIR__ . '/_prive/paiement.php';
 
 $ref = (string) ($_GET['ref'] ?? '');
 $token = (string) ($_GET['t'] ?? '');
@@ -17,9 +18,9 @@ if (!$order) {
 }
 
 $o = $order;
-$template = cfg()['revolut_link_template'];
-$pay = revolut_link($template, (int) $o['total_cents'], $o['ref']);
-$amountInLink = str_contains($template, '{amount}');
+$link = pay_link_paper((int) $o['total_cents'], $o['ref']);
+$pay = $link['url'];
+$amountInLink = $link['prefilled'];
 $total = eur((int) $o['total_cents']);
 
 ob_start();
