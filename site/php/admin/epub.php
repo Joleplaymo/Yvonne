@@ -146,7 +146,8 @@ ob_start();
     <h2>Réglages</h2>
     <form method="post" class="home-form"><?= csrf_field() ?>
       <input type="hidden" name="action" value="settings">
-      <div class="field"><label for="price">Prix (€)</label><input id="price" name="price" inputmode="decimal" required value="<?= h(number_format($price / 100, 2, ',', '')) ?>"></div>
+      <div class="field"><label for="price">Prix (€)</label><input id="price" name="price" inputmode="decimal" required value="<?= h(number_format($price / 100, 2, ',', '')) ?>">
+        <?php if (pay_ebook_fixed_status($db, $price) === 'stale'): ?><p class="notice error">Le lien de paiement epub à montant fixe ne correspond plus à ce prix : mettez-le à jour dans <a href="/admin/paiement">Paiement</a>.</p><?php endif ?></div>
       <div class="field"><label for="cgv">Adresse des conditions générales de vente</label><input id="cgv" name="cgv" type="url" placeholder="https://…" value="<?= h(ebook_cgv_url($db)) ?>"><span class="hint">Facultatif, doit commencer par https://</span></div>
       <label class="check"><input type="checkbox" name="open" value="1"<?= $open ? ' checked' : '' ?>> Vente ouverte au public</label>
       <button class="cta">Enregistrer</button>
